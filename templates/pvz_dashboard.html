@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Kildear - Управление ПВЗ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Мои пункты выдачи</h5>
+                <hr>
+
+                {% for pvz in pvz_points %}
+                <div class="border rounded p-3 mb-3 {% if pvz.is_active %}border-success{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="mb-1">{{ pvz.name }}</h6>
+                        <span class="badge bg-{{ 'success' if pvz.is_active else 'secondary' }}">
+                            {{ 'Активен' if pvz.is_active else 'Неактивен' }}
+                        </span>
+                    </div>
+                    <p class="small text-muted mb-2">
+                        <i class="fas fa-map-marker-alt me-1"></i>{{ pvz.address }}
+                    </p>
+                    <p class="small text-muted mb-2">
+                        <i class="far fa-clock me-1"></i>{{ pvz.working_hours }}
+                    </p>
+                    <p class="small text-muted mb-2">
+                        <i class="fas fa-phone me-1"></i>{{ pvz.phone }}
+                    </p>
+
+                    <div class="btn-group btn-group-sm w-100 mt-2">
+                        <button class="btn btn-outline-primary" onclick="editPVZ({{ pvz.id }})">
+                            <i class="fas fa-edit"></i> Редактировать
+                        </button>
+                        <button class="btn btn-outline-{{ 'danger' if pvz.is_active else 'success' }}"
+                                onclick="togglePVZ({{ pvz.id }})">
+                            <i class="fas fa-{{ 'pause' if pvz.is_active else 'play' }}"></i>
+                            {{ 'Деактивировать' if pvz.is_active else 'Активировать' }}
+                        </button>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-map-marked-alt fa-3x text-muted mb-3"></i>
+                    <p class="mb-3">У вас пока нет ПВЗ</p>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createPVZModal">
+                        Создать первый ПВЗ
+                    </button>
+                </div>
+                {% endfor %}
+
+                {% if pvz_points %}
+                <button class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="modal" data-bs-target="#createPVZModal">
+                    <i class="fas fa-plus me-2"></i>Добавить ПВЗ
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Статистика ПВЗ -->
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="card-title">Статистика за сегодня</h6>
+                <hr>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Новых заказов:</span>
+                    <span class="fw-bold">12</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Выдано заказов:</span>
+                    <span class="fw-bold">8</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Ожидают выдачи:</span>
+                    <span class="fw-bold">24</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Входящие заказы</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>№ заказа</th>
+                                <th>Покупатель</th>
+                                <th>Товары</th>
+                                <th>Сумма</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in incoming_orders %}
+                            <tr>
+                                <td>#{{ order.order_number[-8:] }}</td>
+                                <td>{{ order.buyer.full_name }}</td>
+                                <td>{{ order.items|length }} шт.</td>
+                                <td>{{ "%.0f"|format(order.total_amount) }} ₽</td>
+                                <td>
+                                    <select class="form-select form-select-sm status-select"
+                                            onchange="updateOrderStatus({{ order.id }}, this.value)">
+                                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>
+                                            Ожидает
+                                        </option>
+                                        <option value="received" {% if order.status == 'received' %}selected{% endif %}>
+                                            Получен в ПВЗ
+                                        </option>
+                                        <option value="ready" {% if order.status == 'ready' %}selected{% endif %}>
+                                            Готов к выдаче
+                                        </option>
+                                        <option value="completed" {% if order.status == 'completed' %}selected{% endif %}>
+                                            Выдан
+                                        </option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="viewOrder({{ order.id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    Нет заказов для этого ПВЗ
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Очередь на сегодня -->
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Очередь выдачи на сегодня</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold">10:00 - 11:00</span>
+                            <br>
+                            <small>Иван П. - заказ #ORD-123456</small>
+                        </div>
+                        <span class="badge bg-success">Готов</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold">11:00 - 12:00</span>
+                            <br>
+                            <small>Мария С. - заказ #ORD-123457</small>
+                        </div>
+                        <span class="badge bg-warning">Ожидает</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания ПВЗ -->
+<div class="modal fade" id="createPVZModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Создание пункта выдачи</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('become_pvz_owner') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Название ПВЗ</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Город</label>
+                        <input type="text" class="form-control" name="city" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Адрес</label>
+                        <input type="text" class="form-control" name="address" required>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Широта</label>
+                            <input type="text" class="form-control" name="latitude">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Долгота</label>
+                            <input type="text" class="form-control" name="longitude">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Часы работы</label>
+                        <input type="text" class="form-control" name="working_hours"
+                               placeholder="Пн-Пт 9:00-20:00, Сб-Вс 10:00-18:00">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Телефон</label>
+                        <input type="tel" class="form-control" name="phone"
+                               placeholder="+7 (999) 123-45-67">
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="pvzAgree" required>
+                        <label class="form-check-label" for="pvzAgree">
+                            Я согласен с условиями работы пункта выдачи заказов
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать ПВЗ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateOrderStatus(orderId, status) {
+    $.ajax({
+        url: `/api/order/${orderId}/status`,
+        method: 'POST',
+        data: { status: status },
+        headers: {
+            'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function() {
+            Kildear.showNotification('Статус заказа обновлен', 'success');
+        }
+    });
+}
+
+function editPVZ(pvzId) {
+    window.location.href = `/pvz/edit/${pvzId}`;
+}
+
+function togglePVZ(pvzId) {
+    $.ajax({
+        url: `/pvz/toggle/${pvzId}`,
+        method: 'POST',
+        success: function() {
+            location.reload();
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Kildear - Заказ #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Заказ #{{ order.order_number }}</h5>
+                <span class="status-badge status-{{ order.status }}">{{ order.status }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Информация о заказе</h6>
+                        <p class="mb-2"><small class="text-muted">Дата заказа:</small> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                        <p class="mb-2"><small class="text-muted">Способ оплаты:</small> {{ order.payment_method }}</p>
+                        <p class="mb-2"><small class="text-muted">Статус оплаты:</small> {{ order.payment_status }}</p>
+                        {% if order.tracking_number %}
+                        <p class="mb-2"><small class="text-muted">Трек-номер:</small> {{ order.tracking_number }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Доставка</h6>
+                        {% if order.pvz_point %}
+                        <p class="mb-2"><small class="text-muted">ПВЗ:</small> {{ order.pvz_point.name }}</p>
+                        <p class="mb-2"><small class="text-muted">Адрес:</small> {{ order.pvz_point.address }}</p>
+                        {% else %}
+                        <p class="mb-2">{{ order.shipping_address }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <h6 class="mb-3">Состав заказа</h6>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Товар</th>
+                                <th>Цена</th>
+                                <th>Кол-во</th>
+                                <th>Сумма</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if item.listing.images and item.listing.images[0] %}
+                                        <img src="{{ item.listing.images[0] }}" style="width: 50px; height: 50px; object-fit: cover;" class="rounded me-3">
+                                        {% endif %}
+                                        <div>
+                                            <a href="{{ url_for('listing_detail', listing_id=item.listing.id) }}" class="text-decoration-none">
+                                                {{ item.listing.title }}
+                                            </a>
+                                            <br>
+                                            <small class="text-muted">Продавец: {{ item.seller.full_name }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ "%.0f"|format(item.price) }} ₽</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ "%.0f"|format(item.price * item.quantity) }} ₽</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">Итого:</td>
+                                <td class="fw-bold text-primary">{{ "%.0f"|format(order.total_amount) }} ₽</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <hr>
+
+                <!-- История статусов -->
+                <h6 class="mb-3">История заказа</h6>
+                <div class="timeline">
+                    <div class="d-flex mb-3">
+                        <div class="me-3">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                        <div>
+                            <p class="mb-0"><strong>Заказ оформлен</strong></p>
+                            <small class="text-muted">{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                        </div>
+                    </div>
+
+                    {% if order.payment_status == 'paid' %}
+                    <div class="d-flex mb-3">
+                        <div class="me-3">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                        <div>
+                            <p class="mb-0"><strong>Оплачен</strong></p>
+                            <small class="text-muted">{{ order.updated_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if order.status == 'shipped' %}
+                    <div class="d-flex mb-3">
+                        <div class="me-3">
+                            <i class="fas fa-truck text-primary"></i>
+                        </div>
+                        <div>
+                            <p class="mb-0"><strong>Передан в доставку</strong></p>
+                            <small class="text-muted">{{ order.updated_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if order.status == 'delivered' %}
+                    <div class="d-flex mb-3">
+                        <div class="me-3">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                        <div>
+                            <p class="mb-0"><strong>Доставлен</strong></p>
+                            <small class="text-muted">{{ order.updated_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Кнопка для отзыва -->
+        {% if order.status == 'delivered' %}
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6>Оцените товары</h6>
+                <p class="text-muted small mb-3">Поделитесь впечатлениями о покупке</p>
+                <button class="btn btn-primary" onclick="location.href='{{ url_for('add_review', order_id=order.id) }}'">
+                    Написать отзыв
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <!-- Помощь -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h6 class="mb-3">Нужна помощь?</h6>
+                <p class="small text-muted mb-3">
+                    Если у вас возникли вопросы по заказу, вы можете связаться с поддержкой
+                </p>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary btn-sm" onclick="supportChat()">
+                        <i class="fas fa-comment me-2"></i>Чат с поддержкой
+                    </button>
+                    <a href="tel:88001234567" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-phone me-2"></i>8 (800) 123-45-67
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Возврат -->
+        {% if order.status == 'delivered' and (datetime.utcnow() - order.updated_at).days < 14 %}
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="mb-3">Возврат товара</h6>
+                <p class="small text-muted mb-3">
+                    Вы можете вернуть товар в течение 14 дней после получения
+                </p>
+                <button class="btn btn-outline-danger btn-sm w-100" onclick="requestReturn({{ order.id }})">
+                    Оформить возврат
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 20px;
+}
+
+.timeline:before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: #e9ecef;
+}
+</style>
+
+<script>
+function supportChat() {
+    Kildear.showNotification('Чат с поддержкой скоро будет доступен', 'info');
+}
+
+function requestReturn(orderId) {
+    if (confirm('Оформить заявку на возврат?')) {
+        $.ajax({
+            url: `/order/${orderId}/return`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function() {
+                Kildear.showNotification('Заявка на возврат оформлена', 'success');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Kildear - Открыть ПВЗ{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-5">
+                <div class="text-center mb-5">
+                    <i class="fas fa-map-marked-alt fa-4x text-primary mb-3"></i>
+                    <h2 class="h3">Откройте пункт выдачи заказов</h2>
+                    <p class="text-muted">Станьте партнером Kildear и зарабатывайте на выдаче заказов</p>
+                </div>
+
+                <div class="row mb-5">
+                    <div class="col-md-4 text-center">
+                        <div class="bg-light rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                             style="width: 60px; height: 60px;">
+                            <i class="fas fa-percent fa-2x text-primary"></i>
+                        </div>
+                        <h6>Комиссия до 3%</h6>
+                        <small class="text-muted">с каждого выданного заказа</small>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="bg-light rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                             style="width: 60px; height: 60px;">
+                            <i class="fas fa-calendar-check fa-2x text-primary"></i>
+                        </div>
+                        <h6>Еженедельные выплаты</h6>
+                        <small class="text-muted">автоматические переводы</small>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="bg-light rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                             style="width: 60px; height: 60px;">
+                            <i class="fas fa-chart-line fa-2x text-primary"></i>
+                        </div>
+                        <h6>Растущий поток</h6>
+                        <small class="text-muted">более 1000 заказов ежедневно</small>
+                    </div>
+                </div>
+
+                <!-- Требования -->
+                <div class="alert alert-info mb-4">
+                    <h6 class="alert-heading"><i class="fas fa-clipboard-check me-2"></i>Требования к ПВЗ:</h6>
+                    <ul class="mb-0 small">
+                        <li>Помещение от 20 м²</li>
+                        <li>Режим работы не менее 8 часов в день</li>
+                        <li>Наличие стеллажей и места для хранения</li>
+                        <li>Доступность для клиентов</li>
+                    </ul>
+                </div>
+
+                <form method="POST" action="{{ url_for('become_pvz_owner') }}" id="pvzForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Название ПВЗ</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Город</label>
+                            <input type="text" class="form-control" name="city" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Адрес</label>
+                        <input type="text" class="form-control" name="address" required
+                               placeholder="ул. Ленина, д. 1, офис 101">
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Координаты (широта)</label>
+                            <input type="text" class="form-control" name="latitude" id="latitude"
+                                   placeholder="55.7558">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Координаты (долгота)</label>
+                            <input type="text" class="form-control" name="longitude" id="longitude"
+                                   placeholder="37.6173">
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Координаты нужны для отображения на карте.
+                                <a href="#" onclick="getCurrentLocation()">Определить автоматически</a>
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Часы работы</label>
+                        <input type="text" class="form-control" name="working_hours" required
+                               placeholder="Пн-Пт 10:00-20:00, Сб-Вс 11:00-18:00">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Телефон</label>
+                        <input type="tel" class="form-control" name="phone" required
+                               placeholder="+7 (999) 123-45-67">
+                    </div>
+
+                    <div class="mb-4 p-3 bg-light rounded">
+                        <h6 class="mb-3">Доходность</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Комиссия за выдачу</span>
+                            <span class="fw-bold text-success">до 3%</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span>Средний доход с ПВЗ</span>
+                            <span class="fw-bold">от 50 000 ₽/мес</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="agreePVZ" required>
+                        <label class="form-check-label" for="agreePVZ">
+                            Я ознакомился и согласен с <a href="#" target="_blank">договором оферты</a>
+                            и <a href="#" target="_blank">правилами работы ПВЗ</a>
+                        </label>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-primary px-5">Открыть ПВЗ</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="history.back()">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            $('#latitude').val(position.coords.latitude.toFixed(6));
+            $('#longitude').val(position.coords.longitude.toFixed(6));
+            Kildear.showNotification('Координаты определены', 'success');
+        }, function(error) {
+            Kildear.showNotification('Не удалось определить координаты', 'warning');
+        });
+    } else {
+        Kildear.showNotification('Геолокация не поддерживается', 'warning');
+    }
+}
+</script>
+{% endblock %}

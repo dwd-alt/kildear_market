@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kildear Маркетплейс{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- CSRF Token для AJAX -->
+    <meta name="csrf-token" content="{{ csrf_token() if csrf_token else '' }}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <span class="brand-gradient">kildear.</span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <!-- Поиск -->
+                <form class="d-flex mx-auto" style="width: 50%;" action="{{ url_for('index') }}" method="get">
+                    <div class="input-group">
+                        <input class="form-control" type="search" name="search" placeholder="Поиск товаров..." value="{{ search or '' }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Меню пользователя -->
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('cart') }}">
+                                <i class="fas fa-shopping-cart"></i>
+                                <span class="badge bg-primary cart-count">{{ current_user.cart_items|length }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user"></i> {{ current_user.full_name }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ url_for('profile') }}">Профиль</a></li>
+                                {% if current_user.is_seller %}
+                                    <li><a class="dropdown-item" href="{{ url_for('seller_dashboard') }}">Кабинет продавца</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('create_listing') }}">Создать объявление</a></li>
+                                {% else %}
+                                    <li><a class="dropdown-item" href="{{ url_for('become_seller') }}">Стать продавцом</a></li>
+                                {% endif %}
+
+                                {% if current_user.is_pvz_owner %}
+                                    <li><a class="dropdown-item" href="{{ url_for('pvz_dashboard') }}">Мои ПВЗ</a></li>
+                                {% else %}
+                                    <li><a class="dropdown-item" href="{{ url_for('become_pvz_owner') }}">Открыть ПВЗ</a></li>
+                                {% endif %}
+
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Выйти</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">Вход</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('register') }}">Регистрация</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash сообщения -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Основной контент -->
+    <main class="container my-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Футер -->
+    <footer class="bg-light mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>kildear.</h5>
+                    <p>Маркетплейс с душой. Покупайте и продавайте с удовольствием.</p>
+                </div>
+                <div class="col-md-2">
+                    <h6>Покупателям</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-decoration-none text-muted">Как сделать заказ</a></li>
+                        <li><a href="#" class="text-decoration-none text-muted">Доставка</a></li>
+                        <li><a href="#" class="text-decoration-none text-muted">Возврат</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2">
+                    <h6>Продавцам</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-decoration-none text-muted">Начать продавать</a></li>
+                        <li><a href="#" class="text-decoration-none text-muted">Правила</a></li>
+                        <li><a href="#" class="text-decoration-none text-muted">Комиссия</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2">
+                    <h6>ПВЗ</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-decoration-none text-muted">Открыть ПВЗ</a></li>
+                        <li><a href="#" class="text-decoration-none text-muted">Партнерская программа</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2">
+                    <h6>Мы в соцсетях</h6>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-muted"><i class="fab fa-telegram fa-2x"></i></a>
+                        <a href="#" class="text-muted"><i class="fab fa-vk fa-2x"></i></a>
+                        <a href="#" class="text-muted"><i class="fab fa-instagram fa-2x"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center text-muted">
+                <small>&copy; 2025 Kildear Marketplace. Все права защищены.</small>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery (для AJAX) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

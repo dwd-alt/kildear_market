@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Kildear - Создание объявления{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">Создание нового объявления</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('create_listing') }}" enctype="multipart/form-data" id="listingForm">
+                    <!-- Основная информация -->
+                    <div class="mb-3">
+                        <label class="form-label">Название товара <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="title" required maxlength="200">
+                        <div class="form-text">Максимум 200 символов</div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Категория <span class="text-danger">*</span></label>
+                            <select class="form-select" name="category_id" required>
+                                <option value="">Выберите категорию</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Состояние</label>
+                            <select class="form-select" name="condition">
+                                <option value="new">Новый</option>
+                                <option value="used">Б/у</option>
+                                <option value="refurbished">Восстановленный</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Цена (₽) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="price" required min="0" step="0.01">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Старая цена (₽)</label>
+                            <input type="number" class="form-control" name="old_price" min="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Количество</label>
+                        <input type="number" class="form-control" name="quantity" value="1" min="1" max="999">
+                    </div>
+
+                    <!-- Описание -->
+                    <div class="mb-3">
+                        <label class="form-label">Описание <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="description" rows="6" required></textarea>
+                        <div class="form-text">Подробно опишите товар, его характеристики и состояние</div>
+                    </div>
+
+                    <!-- Изображения -->
+                    <div class="mb-3">
+                        <label class="form-label">Фотографии (до 5 шт)</label>
+                        <input type="file" class="form-control image-upload-input" name="images"
+                               accept="image/jpeg,image/png,image/webp" multiple>
+                        <div class="form-text">Максимальный размер файла: 5 МБ. Форматы: JPG, PNG, WEBP</div>
+
+                        <!-- Превью -->
+                        <div class="image-preview d-flex flex-wrap mt-3"></div>
+                    </div>
+
+                    <!-- Характеристики (динамические) -->
+                    <div class="mb-3">
+                        <label class="form-label">Характеристики</label>
+                        <div id="specsContainer">
+                            <div class="row mb-2">
+                                <div class="col-5">
+                                    <input type="text" class="form-control form-control-sm" placeholder="Название">
+                                </div>
+                                <div class="col-5">
+                                    <input type="text" class="form-control form-control-sm" placeholder="Значение">
+                                </div>
+                                <div class="col-2">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSpec(this)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSpec()">
+                            <i class="fas fa-plus me-1"></i>Добавить характеристику
+                        </button>
+                    </div>
+
+                    <!-- Доставка -->
+                    <div class="mb-4">
+                        <label class="form-label">Способы доставки</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="delivery" value="pickup" checked>
+                            <label class="form-check-label">Самовывоз из ПВЗ</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="delivery" value="courier">
+                            <label class="form-check-label">Курьером</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="delivery" value="post">
+                            <label class="form-check-label">Почтой России</label>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Условия -->
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+                        <label class="form-check-label" for="agreeTerms">
+                            Я подтверждаю, что товар соответствует описанию, и согласен с
+                            <a href="#" target="_blank">правилами размещения объявлений</a>
+                        </label>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">Опубликовать</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="history.back()">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addSpec() {
+    const container = document.getElementById('specsContainer');
+    const row = document.createElement('div');
+    row.className = 'row mb-2';
+    row.innerHTML = `
+        <div class="col-5">
+            <input type="text" class="form-control form-control-sm" name="spec_name[]" placeholder="Название">
+        </div>
+        <div class="col-5">
+            <input type="text" class="form-control form-control-sm" name="spec_value[]" placeholder="Значение">
+        </div>
+        <div class="col-2">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSpec(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(row);
+}
+
+function removeSpec(btn) {
+    btn.closest('.row').remove();
+}
+
+// Валидация перед отправкой
+$('#listingForm').on('submit', function(e) {
+    const images = $('.image-upload-input')[0].files;
+    if (images.length === 0) {
+        e.preventDefault();
+        Kildear.showNotification('Добавьте хотя бы одну фотографию', 'warning');
+    }
+});
+</script>
+{% endblock %}

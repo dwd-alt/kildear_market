@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: kildear_postgres
+    environment:
+      POSTGRES_DB: kildear_db
+      POSTGRES_USER: kildear_user
+      POSTGRES_PASSWORD: strong_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+    networks:
+      - kildear_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: kildear_redis
+    command: redis-server --requirepass redis_strong_password
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: always
+    networks:
+      - kildear_network
+
+  web:
+    build: .
+    container_name: kildear_web
+    environment:
+      - DATABASE_URL=postgresql://kildear_user:strong_password@postgres/kildear_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=redis_strong_password
+      - SECRET_KEY=${SECRET_KEY}
+      - FLASK_DEBUG=False
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./:/app
+    ports:
+      - "5000:5000"
+    command: gunicorn -w 4 -b 0.0.0.0:5000 app:app
+    restart: always
+    networks:
+      - kildear_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: kildear_nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./static:/static
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - web
+    restart: always
+    networks:
+      - kildear_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  kildear_network:
+    driver: bridge

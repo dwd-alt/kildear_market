@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Kildear - Слишком много запросов{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center py-5">
+        <i class="fas fa-shield-alt fa-5x text-warning mb-4"></i>
+        <h1 class="h3 mb-4">Слишком много запросов</h1>
+        <p class="text-muted mb-4">
+            Вы отправили слишком много запросов. Пожалуйста, подождите {{ error.retry_after }} секунд.
+        </p>
+        <div class="d-flex gap-3 justify-content-center">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <i class="fas fa-home me-2"></i>На главную
+            </a>
+            <button onclick="location.reload()" class="btn btn-outline-secondary">
+                <i class="fas fa-sync-alt me-2"></i>Обновить
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Автоматический редирект через N секунд
+const seconds = {{ error.retry_after|default(60) }};
+let timeLeft = seconds;
+
+const timer = setInterval(function() {
+    timeLeft--;
+    if (timeLeft <= 0) {
+        clearInterval(timer);
+        location.reload();
+    }
+}, 1000);
+</script>
+{% endblock %}

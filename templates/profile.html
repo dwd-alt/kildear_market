@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Kildear - Мой профиль{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Боковое меню -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                         style="width: 80px; height: 80px; font-size: 32px;">
+                        {{ current_user.full_name[0] }}
+                    </div>
+                </div>
+                <h5 class="mb-1">{{ current_user.full_name }}</h5>
+                <p class="text-muted small mb-3">{{ current_user.email }}</p>
+
+                {% if current_user.is_verified %}
+                <span class="badge bg-success mb-3">
+                    <i class="fas fa-check-circle me-1"></i>Подтвержден
+                </span>
+                {% else %}
+                <span class="badge bg-warning mb-3">
+                    <i class="fas fa-exclamation-triangle me-1"></i>Не подтвержден
+                </span>
+                {% endif %}
+
+                <hr>
+
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                        <i class="fas fa-edit me-2"></i>Редактировать
+                    </button>
+
+                    {% if not current_user.is_seller %}
+                    <a href="{{ url_for('become_seller') }}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-store me-2"></i>Стать продавцом
+                    </a>
+                    {% endif %}
+
+                    {% if not current_user.is_pvz_owner %}
+                    <a href="{{ url_for('become_pvz_owner') }}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-map-marker-alt me-2"></i>Открыть ПВЗ
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h6 class="card-title">Моя статистика</h6>
+                <hr>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Заказов:</span>
+                    <span class="fw-bold">{{ orders|length }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Объявлений:</span>
+                    <span class="fw-bold">{{ listings_count }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>На Kildear:</span>
+                    <span class="fw-bold">{{ current_user.created_at.strftime('%d.%m.%Y') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="col-md-9">
+        <!-- Табы -->
+        <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button">
+                    Мои заказы
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="listings-tab" data-bs-toggle="tab" data-bs-target="#listings" type="button">
+                    Мои объявления
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button">
+                    Отзывы
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button">
+                    Настройки
+                </button>
+            </li>
+        </ul>
+
+        <!-- Содержимое табов -->
+        <div class="tab-content">
+            <!-- Заказы -->
+            <div class="tab-pane fade show active" id="orders">
+                {% if orders %}
+                <div class="row g-4">
+                    {% for order in orders %}
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h6 class="mb-1">Заказ #{{ order.order_number }}</h6>
+                                        <small class="text-muted">{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                                    </div>
+                                    <span class="status-badge status-{{ order.status }}">{{ order.status }}</span>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <small class="text-muted">Товаров:</small>
+                                        <span class="ms-2">{{ order.items|length }}</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted">Сумма:</small>
+                                        <span class="fw-bold ms-2">{{ "%.2f"|format(order.total_amount) }} ₽</span>
+                                    </div>
+                                </div>
+
+                                {% if order.pvz_point %}
+                                <div class="bg-light p-2 rounded mb-3">
+                                    <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                                    <small>ПВЗ: {{ order.pvz_point.address }}</small>
+                                </div>
+                                {% endif %}
+
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="window.location.href='{{ url_for('order_detail', order_id=order.id) }}'">
+                                        Детали заказа
+                                    </button>
+                                    {% if order.tracking_number %}
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="window.open('https://track.kildear.com/{{ order.tracking_number }}')">
+                                        Отследить
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                    <h5>У вас пока нет заказов</h5>
+                    <p class="text-muted">Перейдите в каталог и выберите товары</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">Начать покупки</a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Объявления -->
+            <div class="tab-pane fade" id="listings">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0">Мои объявления</h5>
+                    {% if current_user.is_seller %}
+                    <a href="{{ url_for('create_listing') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-2"></i>Создать объявление
+                    </a>
+                    {% endif %}
+                </div>
+
+                <!-- Здесь будет список объявлений -->
+            </div>
+
+            <!-- Отзывы -->
+            <div class="tab-pane fade" id="reviews">
+                <div class="text-center py-5">
+                    <i class="fas fa-star fa-4x text-muted mb-3"></i>
+                    <h5>У вас пока нет отзывов</h5>
+                    <p class="text-muted">Совершите покупку, чтобы оставить отзыв</p>
+                </div>
+            </div>
+
+            <!-- Настройки -->
+            <div class="tab-pane fade" id="settings">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="mb-4">Настройки безопасности</h5>
+
+                        <form id="securityForm">
+                            <div class="mb-3">
+                                <label class="form-label">Текущий пароль</label>
+                                <input type="password" class="form-control" name="current_password">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Новый пароль</label>
+                                <input type="password" class="form-control" name="new_password">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Подтвердите новый пароль</label>
+                                <input type="password" class="form-control" name="confirm_password">
+                            </div>
+
+                            <hr class="my-4">
+
+                            <h5 class="mb-3">Двухфакторная аутентификация</h5>
+
+                            <div class="form-check form-switch mb-4">
+                                <input class="form-check-input" type="checkbox" id="twofaToggle">
+                                <label class="form-check-label" for="twofaToggle">
+                                    Включить 2FA
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования профиля -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редактировать профиль</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('edit_profile') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="full_name" class="form-label">Полное имя</label>
+                        <input type="text" class="form-control" id="full_name" name="full_name"
+                               value="{{ current_user.full_name }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Телефон</label>
+                        <input type="tel" class="form-control" id="phone" name="phone"
+                               value="{{ current_user.phone or '' }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

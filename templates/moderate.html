@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Kildear - Модерация объявлений{% endblock %}
+
+{% block content %}
+<h2 class="h3 mb-4">Модерация объявлений</h2>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h6>Статистика</h6>
+                <hr>
+                <div class="mb-2">
+                    <small>Ожидают проверки:</small>
+                    <span class="fw-bold float-end">{{ listings|length }}</span>
+                </div>
+                <div class="mb-2">
+                    <small>Проверено сегодня:</small>
+                    <span class="fw-bold float-end">15</span>
+                </div>
+                <div>
+                    <small>Среднее время:</small>
+                    <span class="fw-bold float-end">3.5 мин</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6>Фильтры</h6>
+                <hr>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="newOnly" checked>
+                    <label class="form-check-label">Только новые</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="withImages">
+                    <label class="form-check-label">С фото</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <div class="row g-4">
+            {% for listing in listings %}
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0" data-listing-id="{{ listing.id }}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-4">
+                                {% if listing.images and listing.images[0] %}
+                                <img src="{{ listing.images[0] }}" class="img-fluid rounded" style="height: 100px; width: 100%; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 100px;">
+                                    <i class="fas fa-image fa-2x text-secondary"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-8">
+                                <h6 class="mb-1">{{ listing.title }}</h6>
+                                <p class="small text-muted mb-2">{{ listing.description[:50] }}...</p>
+                                <div class="d-flex gap-2 mb-2">
+                                    <span class="badge bg-info">{{ listing.category.name }}</span>
+                                    <span class="badge bg-secondary">{{ listing.price }} ₽</span>
+                                </div>
+                                <small class="text-muted">
+                                    Продавец: {{ listing.seller.full_name }}<br>
+                                    Создано: {{ listing.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                </small>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-success flex-grow-1" onclick="moderate({{ listing.id }}, 'approve')">
+                                <i class="fas fa-check me-1"></i>Одобрить
+                            </button>
+                            <button class="btn btn-sm btn-danger flex-grow-1" onclick="showRejectModal({{ listing.id }})">
+                                <i class="fas fa-times me-1"></i>Отклонить
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewFull({{ listing.id }})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                <h5>Нет объявлений на модерации</h5>
+                <p class="text-muted">Все объявления проверены</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно отклонения -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Причина отклонения</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Выберите причину:</label>
+                    <select class="form-select" id="rejectReason">
+                        <option value="Некачественные фото">Некачественные фото</option>
+                        <option value="Недостаточно информации">Недостаточно информации</option>
+                        <option value="Запрещенный товар">Запрещенный товар</option>
+                        <option value="Неверная цена">Неверная цена</option>
+                        <option value="Другое">Другое</option>
+                    </select>
+                </div>
+                <div class="mb-3 d-none" id="otherReasonDiv">
+                    <label class="form-label">Укажите причину:</label>
+                    <textarea class="form-control" id="otherReason" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" onclick="rejectListing()">Отклонить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentListingId = null;
+
+function showRejectModal(listingId) {
+    currentListingId = listingId;
+    $('#rejectModal').modal('show');
+}
+
+$('#rejectReason').on('change', function() {
+    if ($(this).val() === 'Другое') {
+        $('#otherReasonDiv').removeClass('d-none');
+    } else {
+        $('#otherReasonDiv').addClass('d-none');
+    }
+});
+
+function moderate(listingId, action) {
+    let comment = '';
+
+    if (action === 'reject') {
+        comment = $('#rejectReason').val();
+        if (comment === 'Другое') {
+            comment = $('#otherReason').val();
+        }
+        if (!comment) {
+            Kildear.showNotification('Укажите причину отклонения', 'warning');
+            return;
+        }
+    }
+
+    $.ajax({
+        url: `/admin/moderate/${listingId}/${action}`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ comment: comment }),
+        headers: {
+            'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function() {
+            $(`[data-listing-id="${listingId}"]`).fadeOut(300, function() {
+                $(this).remove();
+                if ($('.card[data-listing-id]').length === 0) {
+                    location.reload();
+                }
+            });
+            $('#rejectModal').modal('hide');
+            Kildear.showNotification('Решение принято', 'success');
+        },
+        error: function() {
+            Kildear.showNotification('Ошибка', 'danger');
+        }
+    });
+}
+
+function rejectListing() {
+    moderate(currentListingId, 'reject');
+}
+
+function viewFull(listingId) {
+    window.open(`/listing/${listingId}`, '_blank');
+}
+</script>
+{% endblock %}

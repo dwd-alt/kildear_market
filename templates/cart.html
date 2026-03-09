@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Kildear - Корзина{% endblock %}
+
+{% block content %}
+<h2 class="h3 mb-4">Корзина</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        {% if cart_items %}
+            {% for item in cart_items %}
+            <div class="card shadow-sm border-0 mb-3 cart-item" data-item-id="{{ item.id }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-2">
+                            {% if item.listing.images and item.listing.images[0] %}
+                            <img src="{{ item.listing.images[0] }}" class="img-fluid rounded" alt="{{ item.listing.title }}">
+                            {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 80px;">
+                                <i class="fas fa-image fa-2x text-secondary"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="mb-1">
+                                <a href="{{ url_for('listing_detail', listing_id=item.listing.id) }}" class="text-decoration-none text-dark">
+                                    {{ item.listing.title }}
+                                </a>
+                            </h6>
+                            <small class="text-muted">Продавец: {{ item.listing.seller.full_name }}</small>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="input-group input-group-sm">
+                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity({{ item.id }}, -1)">-</button>
+                                <input type="number" class="form-control text-center quantity-input" value="{{ item.quantity }}"
+                                       min="1" max="{{ item.listing.quantity }}" data-item-id="{{ item.id }}" readonly>
+                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity({{ item.id }}, 1)">+</button>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="fw-bold">{{ "%.0f"|format(item.listing.price * item.quantity) }} ₽</div>
+                            <small class="text-muted">{{ "%.0f"|format(item.listing.price) }} ₽/шт</small>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeFromCart({{ item.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Промокод -->
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="promoCode" placeholder="Промокод">
+                                <button class="btn btn-outline-primary" type="button" onclick="applyPromo()">Применить</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+                <h5>Корзина пуста</h5>
+                <p class="text-muted">Перейдите в каталог, чтобы добавить товары</p>
+                <a href="{{ url_for('index') }}" class="btn btn-primary">Перейти к покупкам</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Итого -->
+    {% if cart_items %}
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 sticky-top" style="top: 20px;">
+            <div class="card-body">
+                <h5 class="card-title mb-4">Ваш заказ</h5>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Товары ({{ cart_items|length }})</span>
+                    <span class="fw-bold" id="subtotal">{{ "%.0f"|format(total) }} ₽</span>
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Доставка</span>
+                    <span class="text-success">Бесплатно</span>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-between mb-4">
+                    <span class="h6">Итого</span>
+                    <span class="h5 fw-bold text-primary" id="total">{{ "%.0f"|format(total) }} ₽</span>
+                </div>
+
+                <!-- Выбор ПВЗ -->
+                <div class="mb-3">
+                    <label class="form-label">Пункт выдачи</label>
+                    <select class="form-select" id="pvzSelect">
+                        <option value="">Выберите ПВЗ</option>
+                        {% for pvz in pvz_points %}
+                        <option value="{{ pvz.id }}">{{ pvz.address }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Способ оплаты -->
+                <div class="mb-4">
+                    <label class="form-label">Способ оплаты</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="payment" id="cardOnline" checked>
+                        <label class="form-check-label" for="cardOnline">
+                            Картой онлайн
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="payment" id="cardOnDelivery">
+                        <label class="form-check-label" for="cardOnDelivery">
+                            Картой при получении
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="payment" id="cash">
+                        <label class="form-check-label" for="cash">
+                            Наличными
+                        </label>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary w-100 py-3" onclick="checkout()" id="checkoutBtn">
+                    Оформить заказ
+                </button>
+
+                <p class="small text-muted text-center mt-3">
+                    <i class="fas fa-lock me-1"></i>
+                    Безопасная оплата
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function updateQuantity(itemId, change) {
+    const input = $(`.quantity-input[data-item-id="${itemId}"]`);
+    let newValue = parseInt(input.val()) + change;
+    const maxValue = parseInt(input.attr('max'));
+
+    if (newValue < 1 || newValue > maxValue) return;
+
+    $.ajax({
+        url: `/cart/update/${itemId}`,
+        method: 'POST',
+        data: { quantity: newValue },
+        headers: {
+            'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            location.reload();
+        },
+        error: function() {
+            Kildear.showNotification('Ошибка при обновлении количества', 'danger');
+        }
+    });
+}
+
+function removeFromCart(itemId) {
+    if (confirm('Удалить товар из корзины?')) {
+        $.ajax({
+            url: `/cart/remove/${itemId}`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function() {
+                $(`.cart-item[data-item-id="${itemId}"]`).fadeOut(300, function() {
+                    location.reload();
+                });
+            },
+            error: function() {
+                Kildear.showNotification('Ошибка при удалении', 'danger');
+            }
+        });
+    }
+}
+
+function applyPromo() {
+    const promo = $('#promoCode').val();
+    if (!promo) {
+        Kildear.showNotification('Введите промокод', 'warning');
+        return;
+    }
+
+    $.ajax({
+        url: '/api/apply-promo',
+        method: 'POST',
+        data: { promo: promo },
+        headers: {
+            'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            Kildear.showNotification('Промокод применен! Скидка ' + response.discount + '%', 'success');
+            $('#subtotal').text(response.new_total + ' ₽');
+            $('#total').text(response.new_total + ' ₽');
+        },
+        error: function() {
+            Kildear.showNotification('Неверный промокод', 'danger');
+        }
+    });
+}
+
+function checkout() {
+    const pvzId = $('#pvzSelect').val();
+    const paymentMethod = $('input[name="payment"]:checked').attr('id');
+
+    if (!pvzId) {
+        Kildear.showNotification('Выберите пункт выдачи', 'warning');
+        return;
+    }
+
+    $('#checkoutBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Оформление...');
+
+    $.ajax({
+        url: '{{ url_for("checkout") }}',
+        method: 'POST',
+        data: {
+            pvz_id: pvzId,
+            payment_method: paymentMethod
+        },
+        headers: {
+            'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            if (response.redirect) {
+                window.location.href = response.redirect;
+            }
+        },
+        error: function(xhr) {
+            $('#checkoutBtn').prop('disabled', false).html('Оформить заказ');
+            Kildear.showNotification(xhr.responseJSON.error || 'Ошибка при оформлении заказа', 'danger');
+        }
+    });
+}
+</script>
+{% endblock %}
