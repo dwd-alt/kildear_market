@@ -28,11 +28,11 @@ class Config:
 
     # База данных PostgreSQL
     SQLALCHEMY_DATABASE_URI = os.environ.get(
-        'DATABASE_URL') or 'postgresql://kildear_user:ВАШ_ПАРОЛЬ@dpg-d6ncpsa4d50c73dev6tg-a.singapore-postgres.render.com:5432/kildear_db'
+        'DATABASE_URL') or 'postgresql://killedar_usera:3UEAF8KtPMCnvHUe9NAYpgHSGtV2pEwo@dpd-d6ncpsa4d56v73dev6tg-a.singapore-postgres.render.com:5432/killedar_mar'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Email настройки (используйте реальные в production)
-    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_SERVER = 'iewlewroman84@gmail.com'
     MAIL_PORT = 587
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or 'noreply@kildear.com'
