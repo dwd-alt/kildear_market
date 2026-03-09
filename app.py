@@ -28,7 +28,7 @@ class Config:
 
     # База данных PostgreSQL
     SQLALCHEMY_DATABASE_URI = os.environ.get(
-        'DATABASE_URL') or 'postgresql://kildear_user:strongpassword@localhost/kildear_db'
+        'DATABASE_URL') or 'postgresql://kildear_user:ВАШ_ПАРОЛЬ@dpg-d6ncpsa4d50c73dev6tg-a.singapore-postgres.render.com:5432/kildear_db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Email настройки (используйте реальные в production)
