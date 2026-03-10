@@ -3,26 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Kildear Маркетплейс{% endblock %}</title>
+    <title>Kildear - {% block title %}Маркетплейс{% endblock %}</title>
 
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
-    <!-- CSRF Token для AJAX -->
-    <meta name="csrf-token" content="{{ csrf_token() if csrf_token else '' }}">
-
-    {% block extra_head %}{% endblock %}
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Навигация -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <!-- Навигационная панель -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <span class="brand-gradient">kildear.</span>
+            <a class="navbar-brand fw-bold text-primary" href="{{ url_for('index') }}">
+                <i class="fas fa-store me-2"></i>Kildear
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
@@ -30,46 +28,44 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarMain">
-                <!-- Поиск -->
-                <form class="d-flex mx-auto" style="width: 50%;" action="{{ url_for('index') }}" method="get">
+                <form class="d-flex mx-auto w-50" action="{{ url_for('search') }}" method="GET">
                     <div class="input-group">
-                        <input class="form-control" type="search" name="search" placeholder="Поиск товаров..." value="{{ search or '' }}">
-                        <button class="btn btn-primary" type="submit">
+                        <input class="form-control rounded-start-pill" type="search" placeholder="Поиск товаров..." name="query">
+                        <button class="btn btn-primary rounded-end-pill" type="submit">
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
                 </form>
 
-                <!-- Меню пользователя -->
                 <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cart') }}">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="badge bg-danger rounded-pill cart-count">0</span>
+                        </a>
+                    </li>
+
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('cart') }}">
-                                <i class="fas fa-shopping-cart"></i>
-                                <span class="badge bg-primary cart-count">{{ current_user.cart_items|length }}</span>
-                            </a>
-                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user"></i> {{ current_user.full_name }}
+                                <i class="fas fa-user-circle"></i> {{ current_user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ url_for('profile') }}">Профиль</a></li>
-                                {% if current_user.is_seller %}
-                                    <li><a class="dropdown-item" href="{{ url_for('seller_dashboard') }}">Кабинет продавца</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('create_listing') }}">Создать объявление</a></li>
-                                {% else %}
-                                    <li><a class="dropdown-item" href="{{ url_for('become_seller') }}">Стать продавцом</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('profile') }}">
+                                    <i class="fas fa-id-card me-2"></i>Профиль
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('seller_dashboard') }}">
+                                    <i class="fas fa-chart-line me-2"></i>Панель продавца
+                                </a></li>
+                                {% if current_user.is_admin %}
+                                <li><a class="dropdown-item" href="{{ url_for('moderate') }}">
+                                    <i class="fas fa-shield-alt me-2"></i>Модерация
+                                </a></li>
                                 {% endif %}
-
-                                {% if current_user.is_pvz_owner %}
-                                    <li><a class="dropdown-item" href="{{ url_for('pvz_dashboard') }}">Мои ПВЗ</a></li>
-                                {% else %}
-                                    <li><a class="dropdown-item" href="{{ url_for('become_pvz_owner') }}">Открыть ПВЗ</a></li>
-                                {% endif %}
-
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Выйти</a></li>
+                                <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                                </a></li>
                             </ul>
                         </li>
                     {% else %}
@@ -77,7 +73,7 @@
                             <a class="nav-link" href="{{ url_for('login') }}">Вход</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('register') }}">Регистрация</a>
+                            <a class="btn btn-primary rounded-pill px-4 ms-2" href="{{ url_for('register') }}">Регистрация</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -85,79 +81,62 @@
         </div>
     </nav>
 
-    <!-- Flash сообщения -->
-    <div class="container mt-3">
+    <!-- Основной контент с отступом для фиксированной навигации -->
+    <main class="container mt-5 pt-4">
+        <!-- Flash сообщения -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show">
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
-    </div>
 
-    <!-- Основной контент -->
-    <main class="container my-4">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Футер -->
-    <footer class="bg-light mt-5 py-4">
+    <!-- Footer -->
+    <footer class="bg-dark text-light mt-5 py-4">
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5>kildear.</h5>
-                    <p>Маркетплейс с душой. Покупайте и продавайте с удовольствием.</p>
+                    <h5 class="text-primary">Kildear</h5>
+                    <p class="text-muted">Ваш надежный маркетплейс для покупки и продажи товаров.</p>
                 </div>
-                <div class="col-md-2">
-                    <h6>Покупателям</h6>
+                <div class="col-md-4">
+                    <h5>Полезные ссылки</h5>
                     <ul class="list-unstyled">
-                        <li><a href="#" class="text-decoration-none text-muted">Как сделать заказ</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted">Доставка</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted">Возврат</a></li>
+                        <li><a href="#" class="text-muted text-decoration-none">О нас</a></li>
+                        <li><a href="#" class="text-muted text-decoration-none">Доставка</a></li>
+                        <li><a href="#" class="text-muted text-decoration-none">Возврат</a></li>
+                        <li><a href="#" class="text-muted text-decoration-none">Контакты</a></li>
                     </ul>
                 </div>
-                <div class="col-md-2">
-                    <h6>Продавцам</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="#" class="text-decoration-none text-muted">Начать продавать</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted">Правила</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted">Комиссия</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-2">
-                    <h6>ПВЗ</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="#" class="text-decoration-none text-muted">Открыть ПВЗ</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted">Партнерская программа</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-2">
-                    <h6>Мы в соцсетях</h6>
-                    <div class="d-flex gap-3">
-                        <a href="#" class="text-muted"><i class="fab fa-telegram fa-2x"></i></a>
-                        <a href="#" class="text-muted"><i class="fab fa-vk fa-2x"></i></a>
-                        <a href="#" class="text-muted"><i class="fab fa-instagram fa-2x"></i></a>
+                <div class="col-md-4">
+                    <h5>Мы в соцсетях</h5>
+                    <div class="social-links">
+                        <a href="#" class="text-light me-3"><i class="fab fa-telegram fa-2x"></i></a>
+                        <a href="#" class="text-light me-3"><i class="fab fa-vk fa-2x"></i></a>
+                        <a href="#" class="text-light"><i class="fab fa-whatsapp fa-2x"></i></a>
                     </div>
                 </div>
             </div>
-            <hr>
+            <hr class="bg-secondary">
             <div class="text-center text-muted">
-                <small>&copy; 2025 Kildear Marketplace. Все права защищены.</small>
+                <small>&copy; 2024 Kildear. Все права защищены.</small>
             </div>
         </div>
     </footer>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- jQuery (для AJAX) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-
-    {% block extra_scripts %}{% endblock %}
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

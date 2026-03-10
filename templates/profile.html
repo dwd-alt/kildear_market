@@ -1,219 +1,381 @@
 {% extends "base.html" %}
 
-{% block title %}Kildear - Мой профиль{% endblock %}
+{% block title %}Мой профиль{% endblock %}
 
 {% block content %}
 <div class="row">
     <!-- Боковое меню -->
     <div class="col-md-3">
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-body text-center">
-                <div class="mb-3">
-                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                         style="width: 80px; height: 80px; font-size: 32px;">
-                        {{ current_user.full_name[0] }}
-                    </div>
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body text-center p-4">
+                <div class="position-relative d-inline-block">
+                    <img src="{{ user.avatar or 'https://via.placeholder.com/150' }}"
+                         class="rounded-circle mb-3" width="120" height="120" style="object-fit: cover;">
+                    <button class="btn btn-primary btn-sm rounded-circle position-absolute bottom-0 end-0"
+                            onclick="document.getElementById('avatarInput').click();">
+                        <i class="fas fa-camera"></i>
+                    </button>
                 </div>
-                <h5 class="mb-1">{{ current_user.full_name }}</h5>
-                <p class="text-muted small mb-3">{{ current_user.email }}</p>
+                <input type="file" id="avatarInput" style="display: none;" accept="image/*">
+                <h4 class="fw-bold">{{ user.full_name }}</h4>
+                <p class="text-muted">@{{ user.username }}</p>
 
-                {% if current_user.is_verified %}
-                <span class="badge bg-success mb-3">
-                    <i class="fas fa-check-circle me-1"></i>Подтвержден
-                </span>
-                {% else %}
-                <span class="badge bg-warning mb-3">
-                    <i class="fas fa-exclamation-triangle me-1"></i>Не подтвержден
-                </span>
-                {% endif %}
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                    <span class="badge bg-light text-dark p-2">
+                        <i class="fas fa-star text-warning"></i> {{ user.rating }}
+                    </span>
+                    <span class="badge bg-light text-dark p-2">
+                        <i class="fas fa-shopping-bag text-primary"></i> {{ user.products_count }}
+                    </span>
+                </div>
 
-                <hr>
-
-                <div class="d-grid gap-2">
-                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                <div class="d-grid">
+                    <button class="btn btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#editProfileModal">
                         <i class="fas fa-edit me-2"></i>Редактировать
                     </button>
-
-                    {% if not current_user.is_seller %}
-                    <a href="{{ url_for('become_seller') }}" class="btn btn-outline-success btn-sm">
-                        <i class="fas fa-store me-2"></i>Стать продавцом
-                    </a>
-                    {% endif %}
-
-                    {% if not current_user.is_pvz_owner %}
-                    <a href="{{ url_for('become_pvz_owner') }}" class="btn btn-outline-info btn-sm">
-                        <i class="fas fa-map-marker-alt me-2"></i>Открыть ПВЗ
-                    </a>
-                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Статистика -->
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-body">
-                <h6 class="card-title">Моя статистика</h6>
-                <hr>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Заказов:</span>
-                    <span class="fw-bold">{{ orders|length }}</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Объявлений:</span>
-                    <span class="fw-bold">{{ listings_count }}</span>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span>На Kildear:</span>
-                    <span class="fw-bold">{{ current_user.created_at.strftime('%d.%m.%Y') }}</span>
-                </div>
-            </div>
+        <div class="list-group list-group-flush bg-transparent rounded-4">
+            <a href="#profile-info" class="list-group-item list-group-item-action bg-transparent border-0 rounded-3 mb-2 active" data-bs-toggle="list">
+                <i class="fas fa-user me-2"></i>Личная информация
+            </a>
+            <a href="#my-listings" class="list-group-item list-group-item-action bg-transparent border-0 rounded-3 mb-2" data-bs-toggle="list">
+                <i class="fas fa-box me-2"></i>Мои товары
+            </a>
+            <a href="#orders" class="list-group-item list-group-item-action bg-transparent border-0 rounded-3 mb-2" data-bs-toggle="list">
+                <i class="fas fa-shopping-cart me-2"></i>Заказы
+            </a>
+            <a href="#favorites" class="list-group-item list-group-item-action bg-transparent border-0 rounded-3 mb-2" data-bs-toggle="list">
+                <i class="fas fa-heart me-2"></i>Избранное
+            </a>
+            <a href="#reviews" class="list-group-item list-group-item-action bg-transparent border-0 rounded-3 mb-2" data-bs-toggle="list">
+                <i class="fas fa-star me-2"></i>Отзывы
+            </a>
+            <a href="#settings" class="list-group-item list-group-item-action bg-transparent border-0 rounded-3 mb-2" data-bs-toggle="list">
+                <i class="fas fa-cog me-2"></i>Настройки
+            </a>
         </div>
     </div>
 
     <!-- Основной контент -->
     <div class="col-md-9">
-        <!-- Табы -->
-        <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button">
-                    Мои заказы
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="listings-tab" data-bs-toggle="tab" data-bs-target="#listings" type="button">
-                    Мои объявления
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button">
-                    Отзывы
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button">
-                    Настройки
-                </button>
-            </li>
-        </ul>
-
-        <!-- Содержимое табов -->
         <div class="tab-content">
-            <!-- Заказы -->
-            <div class="tab-pane fade show active" id="orders">
-                {% if orders %}
-                <div class="row g-4">
-                    {% for order in orders %}
-                    <div class="col-12">
-                        <div class="card shadow-sm border-0">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div>
-                                        <h6 class="mb-1">Заказ #{{ order.order_number }}</h6>
-                                        <small class="text-muted">{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
-                                    </div>
-                                    <span class="status-badge status-{{ order.status }}">{{ order.status }}</span>
+            <!-- Личная информация -->
+            <div class="tab-pane fade show active" id="profile-info">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4">
+                        <h4 class="fw-bold">Личная информация</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="text-muted small">Имя</label>
+                                    <p class="fw-bold mb-0">{{ user.first_name }}</p>
                                 </div>
-
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <small class="text-muted">Товаров:</small>
-                                        <span class="ms-2">{{ order.items|length }}</span>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <small class="text-muted">Сумма:</small>
-                                        <span class="fw-bold ms-2">{{ "%.2f"|format(order.total_amount) }} ₽</span>
-                                    </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="text-muted small">Фамилия</label>
+                                    <p class="fw-bold mb-0">{{ user.last_name }}</p>
                                 </div>
-
-                                {% if order.pvz_point %}
-                                <div class="bg-light p-2 rounded mb-3">
-                                    <i class="fas fa-map-marker-alt text-primary me-2"></i>
-                                    <small>ПВЗ: {{ order.pvz_point.address }}</small>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="text-muted small">Email</label>
+                                    <p class="fw-bold mb-0">{{ user.email }}</p>
                                 </div>
-                                {% endif %}
-
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="window.location.href='{{ url_for('order_detail', order_id=order.id) }}'">
-                                        Детали заказа
-                                    </button>
-                                    {% if order.tracking_number %}
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="window.open('https://track.kildear.com/{{ order.tracking_number }}')">
-                                        Отследить
-                                    </button>
-                                    {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="text-muted small">Телефон</label>
+                                    <p class="fw-bold mb-0">{{ user.phone or 'Не указан' }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="text-muted small">Дата регистрации</label>
+                                    <p class="fw-bold mb-0">{{ user.created_at.strftime('%d.%m.%Y') }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="text-muted small">Статус</label>
+                                    <p class="mb-0">
+                                        {% if user.is_verified %}
+                                            <span class="badge bg-success">Подтвержден</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Не подтвержден</span>
+                                        {% endif %}
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
-                {% else %}
-                <div class="text-center py-5">
-                    <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
-                    <h5>У вас пока нет заказов</h5>
-                    <p class="text-muted">Перейдите в каталог и выберите товары</p>
-                    <a href="{{ url_for('index') }}" class="btn btn-primary">Начать покупки</a>
-                </div>
-                {% endif %}
             </div>
 
-            <!-- Объявления -->
-            <div class="tab-pane fade" id="listings">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="mb-0">Мои объявления</h5>
-                    {% if current_user.is_seller %}
-                    <a href="{{ url_for('create_listing') }}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-2"></i>Создать объявление
-                    </a>
-                    {% endif %}
+            <!-- Мои товары -->
+            <div class="tab-pane fade" id="my-listings">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                        <h4 class="fw-bold mb-0">Мои товары</h4>
+                        <a href="{{ url_for('create_listing') }}" class="btn btn-primary rounded-pill">
+                            <i class="fas fa-plus me-2"></i>Добавить товар
+                        </a>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            {% for product in user.products %}
+                            <div class="col-md-6">
+                                <div class="card product-card h-100">
+                                    <div class="position-relative">
+                                        <img src="{{ product.image }}" class="product-image w-100" style="height: 150px;">
+                                        <div class="position-absolute top-0 end-0 m-2">
+                                            <span class="badge bg-{{ 'success' if product.status == 'active' else 'warning' }}">
+                                                {{ product.status }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="fw-bold">{{ product.title }}</h6>
+                                        <p class="text-primary fw-bold mb-2">{{ product.price }} ₽</p>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-primary flex-grow-1" onclick="editProduct({{ product.id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct({{ product.id }})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="col-12 text-center py-5">
+                                <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                                <h5 class="text-muted">У вас пока нет товаров</h5>
+                                <a href="{{ url_for('create_listing') }}" class="btn btn-primary rounded-pill mt-3">
+                                    Добавить первый товар
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                <!-- Здесь будет список объявлений -->
+            <!-- Заказы -->
+            <div class="tab-pane fade" id="orders">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4">
+                        <h4 class="fw-bold">Мои заказы</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <ul class="nav nav-pills mb-4" id="ordersTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="active-orders-tab" data-bs-toggle="pill" data-bs-target="#active-orders" type="button">
+                                    Активные
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="completed-orders-tab" data-bs-toggle="pill" data-bs-target="#completed-orders" type="button">
+                                    Завершенные
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="cancelled-orders-tab" data-bs-toggle="pill" data-bs-target="#cancelled-orders" type="button">
+                                    Отмененные
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="ordersTabContent">
+                            <div class="tab-pane fade show active" id="active-orders">
+                                {% for order in active_orders %}
+                                <div class="order-item border-bottom pb-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Заказ #{{ order.id }}</h6>
+                                            <p class="text-muted small mb-1">{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                                        </div>
+                                        <span class="badge bg-info">{{ order.status }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <span class="fw-bold">{{ order.total_amount }} ₽</span>
+                                        <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                                            Подробнее
+                                        </a>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <p class="text-center text-muted py-4">Нет активных заказов</p>
+                                {% endfor %}
+                            </div>
+
+                            <div class="tab-pane fade" id="completed-orders">
+                                <!-- Аналогично для завершенных заказов -->
+                            </div>
+
+                            <div class="tab-pane fade" id="cancelled-orders">
+                                <!-- Аналогично для отмененных заказов -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Избранное -->
+            <div class="tab-pane fade" id="favorites">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4">
+                        <h4 class="fw-bold">Избранные товары</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            {% for product in favorite_products %}
+                            <div class="col-md-6">
+                                <div class="card product-card h-100">
+                                    <img src="{{ product.image }}" class="product-image w-100" style="height: 150px;">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold">{{ product.title }}</h6>
+                                        <p class="text-primary fw-bold mb-2">{{ product.price }} ₽</p>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-primary flex-grow-1 add-to-cart" data-product-id="{{ product.id }}">
+                                                В корзину
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="removeFromFavorites({{ product.id }})">
+                                                <i class="fas fa-heart"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="col-12 text-center py-5">
+                                <i class="far fa-heart fa-4x text-muted mb-3"></i>
+                                <h5 class="text-muted">В избранном пока пусто</h5>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Отзывы -->
             <div class="tab-pane fade" id="reviews">
-                <div class="text-center py-5">
-                    <i class="fas fa-star fa-4x text-muted mb-3"></i>
-                    <h5>У вас пока нет отзывов</h5>
-                    <p class="text-muted">Совершите покупку, чтобы оставить отзыв</p>
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                        <h4 class="fw-bold mb-0">Отзывы обо мне</h4>
+                        <div class="rating-summary">
+                            <span class="h4 fw-bold text-primary">{{ user.rating }}</span>
+                            <span class="text-muted">/5</span>
+                            <div class="rating ms-2 d-inline-block">
+                                {% for i in range(5) %}
+                                    <i class="fas fa-star{{ '-half-alt' if user.rating - i > 0 and user.rating - i < 1 else '' }} text-warning"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        {% for review in user.reviews %}
+                        <div class="review-item border-bottom pb-3 mb-3">
+                            <div class="d-flex gap-3">
+                                <img src="{{ review.author.avatar or 'https://via.placeholder.com/50' }}"
+                                     class="rounded-circle" width="50" height="50" style="object-fit: cover;">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="fw-bold mb-1">{{ review.author.username }}</h6>
+                                            <div class="rating mb-2">
+                                                {% for i in range(5) %}
+                                                    <i class="fas fa-star{{ '' if i < review.rating else '-o' }} text-warning"></i>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        <span class="text-muted small">{{ review.created_at.strftime('%d.%m.%Y') }}</span>
+                                    </div>
+                                    <p class="mb-2">{{ review.comment }}</p>
+                                    {% if review.product %}
+                                    <small class="text-muted">
+                                        Товар: <a href="{{ url_for('listing_detail', listing_id=review.product.id) }}">{{ review.product.title }}</a>
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <p class="text-center text-muted py-4">Пока нет отзывов</p>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
 
             <!-- Настройки -->
             <div class="tab-pane fade" id="settings">
-                <div class="card shadow-sm border-0">
-                    <div class="card-body">
-                        <h5 class="mb-4">Настройки безопасности</h5>
-
-                        <form id="securityForm">
-                            <div class="mb-3">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4">
+                        <h4 class="fw-bold">Настройки аккаунта</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="POST" action="{{ url_for('update_settings') }}">
+                            <h5 class="mb-3">Безопасность</h5>
+                            <div class="mb-4">
                                 <label class="form-label">Текущий пароль</label>
                                 <input type="password" class="form-control" name="current_password">
                             </div>
-
-                            <div class="mb-3">
+                            <div class="mb-4">
                                 <label class="form-label">Новый пароль</label>
                                 <input type="password" class="form-control" name="new_password">
                             </div>
-
-                            <div class="mb-3">
+                            <div class="mb-4">
                                 <label class="form-label">Подтвердите новый пароль</label>
-                                <input type="password" class="form-control" name="confirm_password">
+                                <input type="password" class="form-control" name="confirm_new_password">
                             </div>
 
                             <hr class="my-4">
 
-                            <h5 class="mb-3">Двухфакторная аутентификация</h5>
-
-                            <div class="form-check form-switch mb-4">
-                                <input class="form-check-input" type="checkbox" id="twofaToggle">
-                                <label class="form-check-label" for="twofaToggle">
-                                    Включить 2FA
-                                </label>
+                            <h5 class="mb-3">Уведомления</h5>
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="emailNotifications" name="email_notifications" checked>
+                                    <label class="form-check-label" for="emailNotifications">
+                                        Email уведомления о новых заказах
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="pushNotifications" name="push_notifications" checked>
+                                    <label class="form-check-label" for="pushNotifications">
+                                        Push уведомления
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter">
+                                    <label class="form-check-label" for="newsletter">
+                                        Получать новости и акции
+                                    </label>
+                                </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                            <hr class="my-4">
+
+                            <h5 class="mb-3 text-danger">Опасная зона</h5>
+                            <div class="d-flex gap-3">
+                                <button type="button" class="btn btn-outline-warning" onclick="deactivateAccount()">
+                                    Деактивировать аккаунт
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" onclick="deleteAccount()">
+                                    Удалить аккаунт
+                                </button>
+                            </div>
+
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-primary rounded-pill px-5">
+                                    Сохранить изменения
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -225,31 +387,120 @@
 <!-- Модальное окно редактирования профиля -->
 <div class="modal fade" id="editProfileModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Редактировать профиль</h5>
+        <div class="modal-content rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Редактировать профиль</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="{{ url_for('edit_profile') }}">
-                <div class="modal-body">
+            <div class="modal-body">
+                <form id="editProfileForm" method="POST" action="{{ url_for('update_profile') }}">
                     <div class="mb-3">
-                        <label for="full_name" class="form-label">Полное имя</label>
-                        <input type="text" class="form-control" id="full_name" name="full_name"
-                               value="{{ current_user.full_name }}">
+                        <label class="form-label">Имя</label>
+                        <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}">
                     </div>
-
                     <div class="mb-3">
-                        <label for="phone" class="form-label">Телефон</label>
-                        <input type="tel" class="form-control" id="phone" name="phone"
-                               value="{{ current_user.phone or '' }}">
+                        <label class="form-label">Фамилия</label>
+                        <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}">
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Сохранить</button>
-                </div>
-            </form>
+                    <div class="mb-3">
+                        <label class="form-label">Телефон</label>
+                        <input type="text" class="form-control" name="phone" value="{{ user.phone }}" id="editPhone">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">О себе</label>
+                        <textarea class="form-control" name="bio" rows="3">{{ user.bio }}</textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" form="editProfileForm" class="btn btn-primary rounded-pill">Сохранить</button>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+// Загрузка аватара
+document.getElementById('avatarInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    fetch('/api/upload-avatar', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            location.reload();
+        }
+    });
+});
+
+// Удаление товара
+function deleteProduct(productId) {
+    if(confirm('Вы уверены, что хотите удалить этот товар?')) {
+        fetch(`/api/products/${productId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+// Удаление из избранного
+function removeFromFavorites(productId) {
+    fetch(`/api/favorites/${productId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            location.reload();
+        }
+    });
+}
+
+// Деактивация аккаунта
+function deactivateAccount() {
+    if(confirm('Вы уверены, что хотите деактивировать аккаунт?')) {
+        fetch('/api/deactivate-account', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                window.location.href = '/';
+            }
+        });
+    }
+}
+
+// Удаление аккаунта
+function deleteAccount() {
+    if(confirm('Это действие необратимо. Все ваши данные будут удалены. Продолжить?')) {
+        fetch('/api/delete-account', {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                window.location.href = '/';
+            }
+        });
+    }
+}
+
+// Маска для телефона в модальном окне
+document.getElementById('editPhone').addEventListener('input', function(e) {
+    let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+    e.target.value = !x[2] ? x[1] : '+' + x[1] + ' (' + x[2] + ') ' + x[3] + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+});
+</script>
 {% endblock %}

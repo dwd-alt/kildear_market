@@ -1,846 +1,960 @@
-// main.js - Полный клиентский код для маркетплейса Kildear
+// ==================== ГЛОБАЛЬНЫЕ ФУНКЦИИ ====================
 
-// Конфигурация
-const API_URL = window.location.origin + '/api';
-let currentUser = null;
-let authToken = localStorage.getItem('authToken');
+// Инициализация при загрузке страницы
+$(document).ready(function() {
+    console.log('Kildear marketplace initialized');
 
-// DOM элементы
-const elements = {
-    // Навигация
-    navAuth: document.getElementById('nav-auth'),
-    userMenu: document.getElementById('user-menu'),
-    userName: document.getElementById('user-name'),
+    // Инициализация Bootstrap компонентов
+    initBootstrapComponents();
 
-    // Модалки
-    authModal: document.getElementById('auth-modal'),
-    registerModal: document.getElementById('register-modal'),
-    verifyModal: document.getElementById('verify-modal'),
-    sellerModal: document.getElementById('seller-modal'),
-    pvzModal: document.getElementById('pvz-modal'),
-    productModal: document.getElementById('product-modal'),
+    // Обновление счетчика корзины
+    updateCartCount();
 
-    // Формы
-    loginForm: document.getElementById('login-form'),
-    registerForm: document.getElementById('register-form'),
-    verifyForm: document.getElementById('verify-form'),
+    // Обновление счетчика уведомлений
+    updateNotificationCount();
 
-    // Контейнеры
-    productsContainer: document.getElementById('products-container'),
-    pvzContainer: document.getElementById('pvz-container'),
+    // Инициализация анимаций при скролле
+    initScrollAnimations();
 
-    // Кнопки
-    becomeSellerBtn: document.getElementById('become-seller'),
-    createProductBtn: document.getElementById('create-product'),
-    createPvzBtn: document.getElementById('create-pvz'),
+    // Инициализация ленивой загрузки изображений
+    initLazyLoading();
 
-    // Фильтры
-    categoryFilter: document.getElementById('category-filter'),
-    priceFilter: document.getElementById('price-filter'),
-    searchInput: document.getElementById('search-input'),
-    searchBtn: document.getElementById('search-btn')
-};
+    // Инициализация поиска в реальном времени
+    initLiveSearch();
 
-// Класс для работы с API
-class KildearAPI {
-    constructor(baseURL) {
-        this.baseURL = baseURL;
-    }
+    // Инициализация обработчиков форм
+    initFormHandlers();
 
-    async request(endpoint, options = {}) {
-        const url = `${this.baseURL}${endpoint}`;
-        const headers = {
-            'Content-Type': 'application/json',
-            ...options.headers
-        };
+    // Инициализация обработчиков корзины
+    initCartHandlers();
 
-        if (authToken) {
-            headers['Authorization'] = `Bearer ${authToken}`;
-        }
-
-        const config = {
-            ...options,
-            headers,
-            credentials: 'same-origin'
-        };
-
-        try {
-            const response = await fetch(url, config);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Произошла ошибка');
-            }
-
-            return data;
-        } catch (error) {
-            console.error('API Error:', error);
-            throw error;
-        }
-    }
-
-    // Аутентификация
-    async register(userData) {
-        return this.request('/auth/register', {
-            method: 'POST',
-            body: JSON.stringify(userData)
-        });
-    }
-
-    async verifyEmail(email, code, password, userInfo) {
-        return this.request('/auth/verify', {
-            method: 'POST',
-            body: JSON.stringify({ email, code, password, ...userInfo })
-        });
-    }
-
-    async resendCode(email) {
-        return this.request('/auth/resend-code', {
-            method: 'POST',
-            body: JSON.stringify({ email })
-        });
-    }
-
-    async login(credentials) {
-        const data = await this.request('/auth/login', {
-            method: 'POST',
-            body: JSON.stringify(credentials)
-        });
-
-        if (data.token) {
-            authToken = data.token;
-            localStorage.setItem('authToken', data.token);
-            currentUser = data.user;
-        }
-
-        return data;
-    }
-
-    async logout() {
-        await this.request('/auth/logout', { method: 'POST' });
-        authToken = null;
-        currentUser = null;
-        localStorage.removeItem('authToken');
-    }
-
-    // Профиль
-    async getProfile() {
-        return this.request('/user/profile');
-    }
-
-    async updateProfile(userData) {
-        return this.request('/user/profile', {
-            method: 'PUT',
-            body: JSON.stringify(userData)
-        });
-    }
-
-    async becomeSeller() {
-        return this.request('/user/become-seller', { method: 'POST' });
-    }
-
-    // Товары
-    async getProducts(params = {}) {
-        const queryString = new URLSearchParams(params).toString();
-        return this.request(`/products?${queryString}`);
-    }
-
-    async getProduct(id) {
-        return this.request(`/products/${id}`);
-    }
-
-    async createProduct(productData) {
-        return this.request('/products', {
-            method: 'POST',
-            body: JSON.stringify(productData)
-        });
-    }
-
-    async updateProduct(id, productData) {
-        return this.request(`/products/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(productData)
-        });
-    }
-
-    async updateProductStatus(id, status) {
-        return this.request(`/products/${id}/status`, {
-            method: 'POST',
-            body: JSON.stringify({ status })
-        });
-    }
-
-    // ПВЗ
-    async getPVZ(city = '') {
-        const params = city ? `?city=${encodeURIComponent(city)}` : '';
-        return this.request(`/pvz${params}`);
-    }
-
-    async createPVZ(pvzData) {
-        return this.request('/pvz', {
-            method: 'POST',
-            body: JSON.stringify(pvzData)
-        });
-    }
-
-    async updatePVZ(id, pvzData) {
-        return this.request(`/pvz/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(pvzData)
-        });
-    }
-
-    async deletePVZ(id) {
-        return this.request(`/pvz/${id}`, {
-            method: 'DELETE'
-        });
-    }
-
-    // Заказы
-    async createOrder(orderData) {
-        return this.request('/orders', {
-            method: 'POST',
-            body: JSON.stringify(orderData)
-        });
-    }
-
-    async getOrders(page = 1) {
-        return this.request(`/orders?page=${page}`);
-    }
-
-    // Отзывы
-    async createReview(reviewData) {
-        return this.request('/reviews', {
-            method: 'POST',
-            body: JSON.stringify(reviewData)
-        });
-    }
-}
-
-// Инициализация API
-const api = new KildearAPI(API_URL);
-
-// Утилиты
-const utils = {
-    showModal(modal) {
-        if (modal) {
-            modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
-    },
-
-    hideModal(modal) {
-        if (modal) {
-            modal.classList.remove('show');
-            document.body.style.overflow = '';
-        }
-    },
-
-    showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.textContent = message;
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 25px;
-            background: ${type === 'error' ? '#f44336' : type === 'success' ? '#4caf50' : '#2196f3'};
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
-        `;
-        document.body.appendChild(notification);
-        setTimeout(() => {
-            notification.remove();
-        }, 5000);
-    },
-
-    formatPrice(price) {
-        return new Intl.NumberFormat('ru-RU', {
-            style: 'currency',
-            currency: 'RUB',
-            minimumFractionDigits: 0
-        }).format(price);
-    },
-
-    sanitizeHTML(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    },
-
-    debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-};
-
-// Обработчики аутентификации
-class AuthHandler {
-    static async handleLogin(event) {
-        event.preventDefault();
-        const form = event.target;
-        const email = form.querySelector('[name="email"]').value;
-        const password = form.querySelector('[name="password"]').value;
-
-        try {
-            const result = await api.login({ email, password });
-            utils.showNotification('Вход выполнен успешно!', 'success');
-            utils.hideModal(elements.authModal);
-            AuthHandler.updateUI();
-        } catch (error) {
-            utils.showNotification(error.message, 'error');
-        }
-    }
-
-    static async handleRegister(event) {
-        event.preventDefault();
-        const form = event.target;
-        const email = form.querySelector('[name="email"]').value;
-        const password = form.querySelector('[name="password"]').value;
-        const confirmPassword = form.querySelector('[name="confirm-password"]').value;
-
-        if (password !== confirmPassword) {
-            utils.showNotification('Пароли не совпадают', 'error');
-            return;
-        }
-
-        const userData = {
-            email,
-            password,
-            first_name: form.querySelector('[name="first-name"]').value,
-            last_name: form.querySelector('[name="last-name"]').value,
-            phone: form.querySelector('[name="phone"]').value
-        };
-
-        try {
-            const result = await api.register(userData);
-            utils.showNotification('Код подтверждения отправлен на email', 'success');
-            utils.hideModal(elements.registerModal);
-
-            // Показываем модалку верификации
-            const verifyEmail = document.getElementById('verify-email');
-            if (verifyEmail) verifyEmail.value = email;
-            if (elements.verifyModal) {
-                elements.verifyModal.dataset.userData = JSON.stringify(userData);
-                utils.showModal(elements.verifyModal);
-            }
-        } catch (error) {
-            utils.showNotification(error.message, 'error');
-        }
-    }
-
-    static async handleVerify(event) {
-        event.preventDefault();
-        const form = event.target;
-        const email = form.querySelector('[name="email"]').value;
-        const code = form.querySelector('[name="code"]').value;
-
-        const userDataStr = elements.verifyModal?.dataset.userData;
-        if (!userDataStr) {
-            utils.showNotification('Ошибка: данные не найдены', 'error');
-            return;
-        }
-
-        const userData = JSON.parse(userDataStr);
-        const password = userData.password;
-
-        try {
-            const result = await api.verifyEmail(email, code, password, {
-                first_name: userData.first_name,
-                last_name: userData.last_name,
-                phone: userData.phone
-            });
-
-            utils.showNotification('Регистрация завершена!', 'success');
-            utils.hideModal(elements.verifyModal);
-            AuthHandler.updateUI();
-        } catch (error) {
-            utils.showNotification(error.message, 'error');
-        }
-    }
-
-    static async handleResendCode() {
-        const emailInput = document.querySelector('#verify-email');
-        if (!emailInput) return;
-
-        try {
-            await api.resendCode(emailInput.value);
-            utils.showNotification('Новый код отправлен на email', 'success');
-        } catch (error) {
-            utils.showNotification(error.message, 'error');
-        }
-    }
-
-    static async handleLogout() {
-        try {
-            await api.logout();
-            AuthHandler.updateUI();
-            utils.showNotification('Выход выполнен', 'info');
-        } catch (error) {
-            utils.showNotification(error.message, 'error');
-        }
-    }
-
-    static updateUI() {
-        const authLinks = document.querySelectorAll('.auth-link');
-        const userMenu = document.querySelector('.user-menu');
-
-        if (currentUser) {
-            // Пользователь авторизован
-            authLinks.forEach(el => el.style.display = 'none');
-            if (userMenu) {
-                userMenu.style.display = 'block';
-                const userNameEl = document.getElementById('user-name-display');
-                if (userNameEl) {
-                    userNameEl.textContent = currentUser.first_name || currentUser.email;
-                }
-            }
-        } else {
-            // Не авторизован
-            authLinks.forEach(el => el.style.display = 'block');
-            if (userMenu) userMenu.style.display = 'none';
-        }
-    }
-
-    static async checkAuth() {
-        if (authToken) {
-            try {
-                const profile = await api.getProfile();
-                currentUser = profile;
-                AuthHandler.updateUI();
-            } catch (error) {
-                // Токен недействителен
-                authToken = null;
-                localStorage.removeItem('authToken');
-            }
-        }
-    }
-}
-
-// Обработчики товаров
-class ProductHandler {
-    static currentPage = 1;
-    static filters = {
-        category: '',
-        min_price: '',
-        max_price: '',
-        search: '',
-        sort: 'newest'
-    };
-
-    static async loadProducts(resetPage = true) {
-        if (resetPage) this.currentPage = 1;
-
-        const params = {
-            page: this.currentPage,
-            ...this.filters
-        };
-
-        // Удаляем пустые параметры
-        Object.keys(params).forEach(key => {
-            if (!params[key] && params[key] !== 0) delete params[key];
-        });
-
-        try {
-            const data = await api.getProducts(params);
-            this.renderProducts(data);
-            this.renderPagination(data);
-        } catch (error) {
-            utils.showNotification('Ошибка загрузки товаров: ' + error.message, 'error');
-        }
-    }
-
-    static renderProducts(data) {
-        const container = elements.productsContainer;
-        if (!container) return;
-
-        if (data.items.length === 0) {
-            container.innerHTML = '<div class="no-products">Товары не найдены</div>';
-            return;
-        }
-
-        container.innerHTML = data.items.map(product => `
-            <div class="product-card" data-id="${product.id}">
-                <div class="product-image">
-                    <img src="${product.images[0]}" alt="${utils.sanitizeHTML(product.title)}" loading="lazy">
-                    ${product.old_price ? '<span class="product-discount">-20%</span>' : ''}
-                </div>
-                <div class="product-info">
-                    <h3 class="product-title">${utils.sanitizeHTML(product.title)}</h3>
-                    <div class="product-price">
-                        ${utils.formatPrice(product.price)}
-                        ${product.old_price ? `<span class="old-price">${utils.formatPrice(product.old_price)}</span>` : ''}
-                    </div>
-                    <div class="product-meta">
-                        <span class="product-seller">${utils.sanitizeHTML(product.seller_name)}</span>
-                        <span class="product-likes">❤️ ${product.likes || 0}</span>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-
-        // Добавляем обработчики клика на карточки
-        container.querySelectorAll('.product-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const productId = card.dataset.id;
-                window.location.href = `/product/${productId}`;
-            });
-        });
-    }
-
-    static renderPagination(data) {
-        const pagination = document.getElementById('pagination');
-        if (!pagination) return;
-
-        if (data.pages <= 1) {
-            pagination.innerHTML = '';
-            return;
-        }
-
-        let html = '<div class="pagination">';
-
-        if (data.page > 1) {
-            html += `<button class="page-btn" data-page="${data.page - 1}">←</button>`;
-        }
-
-        for (let i = 1; i <= data.pages; i++) {
-            if (i === 1 || i === data.pages || Math.abs(i - data.page) <= 2) {
-                html += `<button class="page-btn ${i === data.page ? 'active' : ''}" data-page="${i}">${i}</button>`;
-            } else if (i === data.page - 3 || i === data.page + 3) {
-                html += '<span class="page-dots">...</span>';
-            }
-        }
-
-        if (data.page < data.pages) {
-            html += `<button class="page-btn" data-page="${data.page + 1}">→</button>`;
-        }
-
-        html += '</div>';
-        pagination.innerHTML = html;
-
-        // Добавляем обработчики
-        pagination.querySelectorAll('.page-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.currentPage = parseInt(btn.dataset.page);
-                this.loadProducts(false);
-            });
-        });
-    }
-
-    static async handleCreateProduct(event) {
-        event.preventDefault();
-        const form = event.target;
-
-        const formData = new FormData(form);
-        const productData = {
-            title: formData.get('title'),
-            description: formData.get('description'),
-            price: parseFloat(formData.get('price')),
-            old_price: parseFloat(formData.get('old_price')) || null,
-            category: formData.get('category'),
-            condition: formData.get('condition'),
-            brand: formData.get('brand'),
-            quantity: parseInt(formData.get('quantity')) || 1,
-            images: formData.get('images').split(',').map(url => url.trim()).filter(url => url),
-            attributes: {}
-        };
-
-        try {
-            const result = await api.createProduct(productData);
-            utils.showNotification('Товар создан и отправлен на модерацию', 'success');
-            utils.hideModal(elements.productModal);
-            form.reset();
-        } catch (error) {
-            utils.showNotification(error.message, 'error');
-        }
-    }
-
-    static updateFilters() {
-        const category = elements.categoryFilter?.value;
-        const priceRange = elements.priceFilter?.value;
-        const search = elements.searchInput?.value;
-
-        this.filters.category = category || '';
-        this.filters.search = search || '';
-
-        if (priceRange) {
-            const [min, max] = priceRange.split('-').map(Number);
-            this.filters.min_price = min;
-            this.filters.max_price = max;
-        }
-
-        this.loadProducts();
-    }
-}
-
-// Обработчики ПВЗ
-class PVZHandler {
-    static async loadPVZ(city = '') {
-        try {
-            const points = await api.getPVZ(city);
-            this.renderPVZ(points);
-        } catch (error) {
-            utils.showNotification('Ошибка загрузки ПВЗ: ' + error.message, 'error');
-        }
-    }
-
-    static renderPVZ(points) {
-        const container = elements.pvzContainer;
-        if (!container) return;
-
-        if (points.length === 0) {
-            container.innerHTML = '<div class="no-pvz">Пункты выдачи не найдены</div>';
-            return;
-        }
-
-        container.innerHTML = points.map(pvz => `
-            <div class="pvz-card" data-id="${pvz.id}">
-                <h3 class="pvz-name">${utils.sanitizeHTML(pvz.name)}</h3>
-                <p class="pvz-address">📍 ${utils.sanitizeHTML(pvz.address)}</p>
-                <p class="pvz-phone">📞 ${pvz.phone || 'Не указан'}</p>
-                <div class="pvz-hours">
-                    🕒 ${pvz.working_hours ? Object.entries(pvz.working_hours).map(([day, hours]) =>
-                        `<span class="pvz-hour">${day}: ${hours}</span>`
-                    ).join('') : 'Режим работы не указан'}
-                </div>
-                ${pvz.services && pvz.services.length ? `
-                    <div class="pvz-services">
-                        ${pvz.services.map(service =>
-                            `<span class="pvz-service">✓ ${service}</span>`
-                        ).join('')}
-                    </div>
-                ` : ''}
-            </div>
-        `).join('');
-    }
-
-    static async handleCreatePVZ(event) {
-        event.preventDefault();
-        const form = event.target;
-
-        const formData = new FormData(form);
-        const workingHours = {};
-        ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].forEach(day => {
-            const hours = formData.get(`hours_${day}`);
-            if (hours) workingHours[day] = hours;
-        });
-
-        const pvzData = {
-            name: formData.get('name'),
-            address: formData.get('address'),
-            city: formData.get('city'),
-            latitude: parseFloat(formData.get('latitude')) || null,
-            longitude: parseFloat(formData.get('longitude')) || null,
-            phone: formData.get('phone'),
-            email: formData.get('email'),
-            working_hours: workingHours,
-            services: formData.getAll('services')
-        };
-
-        try {
-            const result = await api.createPVZ(pvzData);
-            utils.showNotification('ПВЗ успешно создан', 'success');
-            utils.hideModal(elements.pvzModal);
-            form.reset();
-            this.loadPVZ();
-        } catch (error) {
-            utils.showNotification(error.message, 'error');
-        }
-    }
-}
-
-// Корзина
-class CartHandler {
-    static items = JSON.parse(localStorage.getItem('cart')) || [];
-
-    static addItem(product) {
-        const existing = this.items.find(item => item.id === product.id);
-        if (existing) {
-            existing.quantity += 1;
-        } else {
-            this.items.push({
-                id: product.id,
-                title: product.title,
-                price: product.price,
-                quantity: 1,
-                image: product.images[0]
-            });
-        }
-        this.save();
-        this.updateUI();
-        utils.showNotification('Товар добавлен в корзину', 'success');
-    }
-
-    static removeItem(productId) {
-        this.items = this.items.filter(item => item.id !== productId);
-        this.save();
-        this.updateUI();
-    }
-
-    static updateQuantity(productId, quantity) {
-        const item = this.items.find(item => item.id === productId);
-        if (item) {
-            item.quantity = Math.max(1, quantity);
-            this.save();
-            this.updateUI();
-        }
-    }
-
-    static getTotal() {
-        return this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    }
-
-    static save() {
-        localStorage.setItem('cart', JSON.stringify(this.items));
-    }
-
-    static updateUI() {
-        const counter = document.getElementById('cart-counter');
-        if (counter) {
-            const count = this.items.reduce((sum, item) => sum + item.quantity, 0);
-            counter.textContent = count;
-            counter.style.display = count > 0 ? 'block' : 'none';
-        }
-    }
-
-    static clear() {
-        this.items = [];
-        this.save();
-        this.updateUI();
-    }
-}
-
-// Заказы
-class OrderHandler {
-    static async createOrder(pvzId = null, shippingAddress = null) {
-        const cartItems = CartHandler.items;
-        if (cartItems.length === 0) {
-            utils.showNotification('Корзина пуста', 'error');
-            return;
-        }
-
-        const orderData = {
-            items: cartItems.map(item => ({
-                product_id: item.id,
-                quantity: item.quantity
-            })),
-            pvz_id: pvzId,
-            shipping_address: shippingAddress
-        };
-
-        try {
-            const result = await api.createOrder(orderData);
-            utils.showNotification(`Заказ №${result.order_number} создан`, 'success');
-            CartHandler.clear();
-            window.location.href = `/order/${result.order_number}`;
-        } catch (error) {
-            utils.showNotification(error.message, 'error');
-        }
-    }
-}
-
-// Инициализация приложения
-document.addEventListener('DOMContentLoaded', async () => {
-    // Проверяем авторизацию
-    await AuthHandler.checkAuth();
-
-    // Загружаем товары
-    if (elements.productsContainer) {
-        await ProductHandler.loadProducts();
-    }
-
-    // Загружаем ПВЗ
-    if (elements.pvzContainer) {
-        await PVZHandler.loadPVZ();
-    }
-
-    // Инициализируем корзину
-    CartHandler.updateUI();
-
-    // Обработчики событий
-    initEventListeners();
+    // Инициализация рейтинга
+    initRatingSystem();
 });
 
-function initEventListeners() {
-    // Авторизация
-    document.getElementById('login-btn')?.addEventListener('click', () => utils.showModal(elements.authModal));
-    document.getElementById('register-btn')?.addEventListener('click', () => utils.showModal(elements.registerModal));
-    document.getElementById('logout-btn')?.addEventListener('click', AuthHandler.handleLogout);
+// ==================== BOOTSTRAP КОМПОНЕНТЫ ====================
 
-    // Закрытие модалок
-    document.querySelectorAll('.modal-close').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const modal = e.target.closest('.modal');
-            utils.hideModal(modal);
+function initBootstrapComponents() {
+    // Инициализация всех тултипов
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Инициализация всех поповеров
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popoverTriggerList.map(function(popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl);
+    });
+
+    // Автоматическое закрытие alert сообщений
+    setTimeout(function() {
+        $('.alert-dismissible').fadeOut();
+    }, 5000);
+}
+
+// ==================== КОРЗИНА ====================
+
+function initCartHandlers() {
+    // Добавление в корзину
+    $(document).on('click', '.add-to-cart', function() {
+        var productId = $(this).data('product-id');
+        var quantity = $(this).data('quantity') || 1;
+        addToCart(productId, quantity);
+    });
+
+    // Удаление из корзины
+    $(document).on('click', '.remove-from-cart', function() {
+        var itemId = $(this).data('item-id');
+        removeFromCart(itemId);
+    });
+
+    // Изменение количества
+    $(document).on('change', '.cart-quantity-input', function() {
+        var itemId = $(this).data('item-id');
+        var quantity = $(this).val();
+        updateCartItemQuantity(itemId, quantity);
+    });
+
+    // Кнопки +/-
+    $(document).on('click', '.quantity-plus', function() {
+        var input = $(this).siblings('.cart-quantity-input');
+        var newVal = parseInt(input.val()) + 1;
+        input.val(newVal).trigger('change');
+    });
+
+    $(document).on('click', '.quantity-minus', function() {
+        var input = $(this).siblings('.cart-quantity-input');
+        var newVal = parseInt(input.val()) - 1;
+        if (newVal >= 1) {
+            input.val(newVal).trigger('change');
+        }
+    });
+}
+
+function addToCart(productId, quantity = 1) {
+    showLoading();
+
+    $.ajax({
+        url: '/api/cart/add',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            product_id: productId,
+            quantity: quantity
+        }),
+        success: function(response) {
+            if (response.success) {
+                showNotification('Товар добавлен в корзину', 'success');
+                updateCartCount();
+                updateCartPreview();
+            } else {
+                showNotification(response.error || 'Ошибка при добавлении товара', 'error');
+            }
+        },
+        error: function(xhr) {
+            var error = xhr.responseJSON?.error || 'Ошибка сервера';
+            showNotification(error, 'error');
+        },
+        complete: function() {
+            hideLoading();
+        }
+    });
+}
+
+function removeFromCart(itemId) {
+    if (!confirm('Удалить товар из корзины?')) return;
+
+    showLoading();
+
+    $.ajax({
+        url: '/api/cart/remove/' + itemId,
+        method: 'DELETE',
+        success: function(response) {
+            if (response.success) {
+                $('[data-item-id="' + itemId + '"]').fadeOut(300, function() {
+                    $(this).remove();
+                    updateCartTotals();
+                    updateCartCount();
+
+                    if ($('.cart-item').length === 0) {
+                        location.reload();
+                    }
+                });
+                showNotification('Товар удален из корзины', 'success');
+            }
+        },
+        error: function() {
+            showNotification('Ошибка при удалении товара', 'error');
+        },
+        complete: function() {
+            hideLoading();
+        }
+    });
+}
+
+function updateCartItemQuantity(itemId, quantity) {
+    if (quantity < 1) {
+        removeFromCart(itemId);
+        return;
+    }
+
+    $.ajax({
+        url: '/api/cart/update/' + itemId,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ quantity: quantity }),
+        success: function(response) {
+            if (response.success) {
+                updateCartTotals();
+                updateCartCount();
+            }
+        },
+        error: function() {
+            showNotification('Ошибка при обновлении количества', 'error');
+        }
+    });
+}
+
+function updateCartCount() {
+    $.ajax({
+        url: '/api/cart/totals',
+        method: 'GET',
+        success: function(data) {
+            $('.cart-count').text(data.count || 0);
+            if (data.count > 0) {
+                $('.cart-count').show();
+            } else {
+                $('.cart-count').hide();
+            }
+        }
+    });
+}
+
+function updateCartTotals() {
+    $.ajax({
+        url: '/api/cart/totals',
+        method: 'GET',
+        success: function(data) {
+            $('#subtotal').text(data.subtotal + ' ₽');
+            $('#total').text(data.total + ' ₽');
+            $('#cartCount').text(data.count);
+
+            if (data.discount > 0) {
+                $('#discount').text('-' + data.discount + ' ₽').parent().show();
+            } else {
+                $('#discount').parent().hide();
+            }
+        }
+    });
+}
+
+function updateCartPreview() {
+    // Обновление превью корзины в шапке
+    $.ajax({
+        url: '/api/cart/preview',
+        method: 'GET',
+        success: function(data) {
+            // Обновление HTML превью
+        }
+    });
+}
+
+// ==================== УВЕДОМЛЕНИЯ ====================
+
+function updateNotificationCount() {
+    $.ajax({
+        url: '/api/notifications',
+        method: 'GET',
+        success: function(notifications) {
+            var count = notifications.length;
+            $('.notification-count').text(count);
+
+            if (count > 0) {
+                $('.notification-count').show();
+                updateNotificationDropdown(notifications);
+            } else {
+                $('.notification-count').hide();
+            }
+        }
+    });
+}
+
+function updateNotificationDropdown(notifications) {
+    var dropdown = $('.notification-dropdown .dropdown-menu');
+    dropdown.empty();
+
+    if (notifications.length > 0) {
+        notifications.forEach(function(n) {
+            dropdown.append(`
+                <a class="dropdown-item notification-item" href="#" data-id="${n.id}">
+                    <div class="d-flex align-items-center">
+                        <div class="notification-icon me-2">
+                            <i class="fas fa-${getNotificationIcon(n.type)} text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small">${n.title}</div>
+                            <div class="small text-muted">${n.message}</div>
+                            <small class="text-muted">${n.created_at}</small>
+                        </div>
+                    </div>
+                </a>
+            `);
         });
+
+        dropdown.append('<div class="dropdown-divider"></div>');
+        dropdown.append('<a class="dropdown-item text-center small" href="/notifications">Все уведомления</a>');
+    } else {
+        dropdown.append('<span class="dropdown-item text-muted text-center">Нет новых уведомлений</span>');
+    }
+}
+
+function getNotificationIcon(type) {
+    var icons = {
+        'new_order': 'shopping-bag',
+        'payment_received': 'credit-card',
+        'order_status': 'truck',
+        'order_cancelled': 'times-circle',
+        'listing_approved': 'check-circle',
+        'listing_rejected': 'exclamation-circle',
+        'review': 'star'
+    };
+    return icons[type] || 'bell';
+}
+
+$(document).on('click', '.notification-item', function(e) {
+    e.preventDefault();
+    var notificationId = $(this).data('id');
+
+    $.ajax({
+        url: '/api/notifications/' + notificationId + '/read',
+        method: 'POST',
+        success: function() {
+            updateNotificationCount();
+        }
+    });
+});
+
+// ==================== ПОИСК ====================
+
+function initLiveSearch() {
+    var searchInput = $('#searchInput');
+    var searchResults = $('#searchResults');
+    var searchTimeout;
+
+    searchInput.on('input', function() {
+        var query = $(this).val();
+
+        clearTimeout(searchTimeout);
+
+        if (query.length < 3) {
+            searchResults.hide();
+            return;
+        }
+
+        searchTimeout = setTimeout(function() {
+            liveSearch(query);
+        }, 300);
     });
 
-    // Формы
-    elements.loginForm?.addEventListener('submit', AuthHandler.handleLogin);
-    elements.registerForm?.addEventListener('submit', AuthHandler.handleRegister);
-    elements.verifyForm?.addEventListener('submit', AuthHandler.handleVerify);
+    // Закрытие результатов при клике вне
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.search-container').length) {
+            searchResults.hide();
+        }
+    });
+}
 
-    document.getElementById('resend-code')?.addEventListener('click', AuthHandler.handleResendCode);
+function liveSearch(query) {
+    $.ajax({
+        url: '/api/search',
+        method: 'GET',
+        data: { q: query },
+        success: function(data) {
+            displaySearchResults(data);
+        }
+    });
+}
 
-    // Стать продавцом
-    elements.becomeSellerBtn?.addEventListener('click', async () => {
-        try {
-            await api.becomeSeller();
-            utils.showNotification('Теперь вы продавец!', 'success');
-            await AuthHandler.checkAuth();
-        } catch (error) {
-            utils.showNotification(error.message, 'error');
+function displaySearchResults(results) {
+    var container = $('#searchResults');
+    container.empty();
+
+    if (results.length > 0) {
+        results.forEach(function(item) {
+            container.append(`
+                <a href="/listing/${item.id}" class="search-result-item d-flex align-items-center p-2 text-decoration-none">
+                    <img src="${item.image}" class="rounded-3 me-2" width="40" height="40" style="object-fit: cover;">
+                    <div class="flex-grow-1">
+                        <div class="small fw-bold text-dark">${item.title}</div>
+                        <div class="small text-primary">${item.price} ₽</div>
+                    </div>
+                </a>
+            `);
+        });
+        container.show();
+    } else {
+        container.html('<div class="p-3 text-muted text-center">Ничего не найдено</div>').show();
+    }
+}
+
+// ==================== ФИЛЬТРАЦИЯ ТОВАРОВ ====================
+
+function initFilters() {
+    $('#filterForm input, #filterForm select').on('change', function() {
+        filterProducts();
+    });
+
+    $('#priceRange').on('input', function() {
+        $('#priceValue').text($(this).val());
+    });
+}
+
+function filterProducts() {
+    var formData = $('#filterForm').serialize();
+
+    $.ajax({
+        url: '/api/filter',
+        method: 'GET',
+        data: formData,
+        success: function(data) {
+            $('#productsGrid').html(data.html);
+            updatePagination(data.pagination);
+        }
+    });
+}
+
+function updatePagination(pagination) {
+    // Обновление пагинации
+}
+
+// ==================== ФОРМЫ И ВАЛИДАЦИЯ ====================
+
+function initFormHandlers() {
+    // Валидация форм
+    $('form[data-validate]').on('submit', function(e) {
+        if (!validateForm($(this))) {
+            e.preventDefault();
         }
     });
 
-    // Создание товара
-    elements.createProductBtn?.addEventListener('click', () => utils.showModal(elements.productModal));
-    elements.productModal?.querySelector('form')?.addEventListener('submit', ProductHandler.handleCreateProduct);
+    // Маски для полей
+    initInputMasks();
 
-    // Создание ПВЗ
-    elements.createPvzBtn?.addEventListener('click', () => utils.showModal(elements.pvzModal));
-    elements.pvzModal?.querySelector('form')?.addEventListener('submit', PVZHandler.handleCreatePVZ);
+    // Превью изображений
+    initImagePreview();
 
-    // Фильтры
-    const debouncedLoad = utils.debounce(() => ProductHandler.updateFilters(), 500);
-    elements.categoryFilter?.addEventListener('change', () => ProductHandler.updateFilters());
-    elements.priceFilter?.addEventListener('change', () => ProductHandler.updateFilters());
-    elements.searchInput?.addEventListener('input', debouncedLoad);
-    elements.searchBtn?.addEventListener('click', () => ProductHandler.updateFilters());
+    // Загрузка аватара
+    initAvatarUpload();
+}
 
-    // Закрытие модалок по клику вне
-    window.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal')) {
-            utils.hideModal(e.target);
+function validateForm($form) {
+    var isValid = true;
+
+    $form.find('[required]').each(function() {
+        if (!$(this).val().trim()) {
+            $(this).addClass('is-invalid');
+            isValid = false;
+        } else {
+            $(this).removeClass('is-invalid');
         }
     });
 
-    // Защита от XSS во всех input
-    document.querySelectorAll('input[type="text"], input[type="email"], textarea').forEach(input => {
-        input.addEventListener('input', function() {
-            this.value = this.value.replace(/[<>]/g, '');
+    // Валидация email
+    var $email = $form.find('input[type="email"]');
+    if ($email.length && $email.val()) {
+        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test($email.val())) {
+            $email.addClass('is-invalid');
+            isValid = false;
+        }
+    }
+
+    // Валидация пароля
+    var $password = $form.find('input[type="password"]');
+    if ($password.length && $password.val()) {
+        if ($password.val().length < 6) {
+            $password.addClass('is-invalid');
+            isValid = false;
+        }
+    }
+
+    return isValid;
+}
+
+function initInputMasks() {
+    // Маска для телефона
+    $(document).on('input', 'input[type="tel"]', function(e) {
+        var x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+        e.target.value = !x[2] ? x[1] : '+' + x[1] + ' (' + x[2] + ') ' + x[3] + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+    });
+
+    // Маска для цены
+    $(document).on('input', 'input[type="number"]', function() {
+        var value = parseFloat($(this).val());
+        if (value < 0) $(this).val(0);
+    });
+
+    // Маска для карты
+    $(document).on('input', '#cardNumber', function(e) {
+        var value = e.target.value.replace(/\D/g, '');
+        var formattedValue = '';
+
+        for (var i = 0; i < value.length; i++) {
+            if (i > 0 && i % 4 === 0) {
+                formattedValue += ' ';
+            }
+            formattedValue += value[i];
+        }
+
+        e.target.value = formattedValue;
+    });
+
+    // Маска для срока действия карты
+    $(document).on('input', '#cardExpiry', function(e) {
+        var value = e.target.value.replace(/\D/g, '');
+
+        if (value.length >= 2) {
+            e.target.value = value.slice(0, 2) + '/' + value.slice(2, 4);
+        } else {
+            e.target.value = value;
+        }
+    });
+
+    // Маска для CVV
+    $(document).on('input', '#cardCvv', function(e) {
+        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 3);
+    });
+}
+
+// ==================== ЗАГРУЗКА ИЗОБРАЖЕНИЙ ====================
+
+function initImagePreview() {
+    $(document).on('change', 'input[type="file"][data-preview]', function() {
+        previewImages(this);
+    });
+}
+
+function previewImages(input) {
+    var preview = $(input).data('preview');
+    var $preview = $(preview);
+    $preview.empty();
+
+    if (input.files) {
+        $.each(input.files, function(i, file) {
+            if (file.type.startsWith('image/')) {
+                var reader = new FileReader();
+
+                reader.onload = function(e) {
+                    $preview.append(`
+                        <div class="preview-item position-relative d-inline-block m-2">
+                            <img src="${e.target.result}" class="rounded-3"
+                                 style="width: 100px; height: 100px; object-fit: cover;">
+                            <button type="button" class="btn-close position-absolute top-0 end-0 m-1 bg-white rounded-circle"
+                                    onclick="removePreview(this)"></button>
+                        </div>
+                    `);
+                };
+
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+}
+
+function removePreview(btn) {
+    $(btn).closest('.preview-item').remove();
+}
+
+function initAvatarUpload() {
+    $('#avatarInput').on('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+
+        var formData = new FormData();
+        formData.append('avatar', file);
+
+        $.ajax({
+            url: '/api/upload-avatar',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    $('.user-avatar').attr('src', response.url);
+                    showNotification('Аватар обновлен', 'success');
+                }
+            },
+            error: function() {
+                showNotification('Ошибка при загрузке аватара', 'error');
+            }
         });
     });
 }
 
-// Экспорт для использования в других модулях
-window.Kildear = {
-    api,
-    utils,
-    AuthHandler,
-    ProductHandler,
-    PVZHandler,
-    CartHandler,
-    OrderHandler
-};
+// ==================== РЕЙТИНГ И ОТЗЫВЫ ====================
+
+function initRatingSystem() {
+    $(document).on('mouseover', '.rating-input i', function() {
+        var rating = $(this).data('rating');
+        highlightStars(rating, $(this).closest('.rating-input'));
+    });
+
+    $(document).on('mouseleave', '.rating-input', function() {
+        var currentRating = $(this).find('input[type="hidden"]').val();
+        highlightStars(currentRating, $(this));
+    });
+
+    $(document).on('click', '.rating-input i', function() {
+        var rating = $(this).data('rating');
+        var $container = $(this).closest('.rating-input');
+        $container.find('input[type="hidden"]').val(rating);
+        highlightStars(rating, $container);
+    });
+}
+
+function highlightStars(rating, $container) {
+    $container.find('i').each(function() {
+        var starRating = $(this).data('rating');
+        if (starRating <= rating) {
+            $(this).removeClass('far').addClass('fas');
+        } else {
+            $(this).removeClass('fas').addClass('far');
+        }
+    });
+}
+
+function submitReview(formId) {
+    var $form = $('#' + formId);
+    var formData = {
+        product_id: $form.find('[name="product_id"]').val(),
+        rating: $form.find('[name="rating"]').val(),
+        comment: $form.find('[name="comment"]').val(),
+        order_id: $form.find('[name="order_id"]').val()
+    };
+
+    if (!formData.rating) {
+        showNotification('Пожалуйста, поставьте оценку', 'warning');
+        return;
+    }
+
+    $.ajax({
+        url: '/api/reviews',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(formData),
+        success: function(response) {
+            if (response.success) {
+                showNotification('Спасибо за отзыв!', 'success');
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                showNotification(response.error || 'Ошибка при отправке отзыва', 'error');
+            }
+        },
+        error: function() {
+            showNotification('Ошибка сервера', 'error');
+        }
+    });
+}
+
+// ==================== ПРОМОКОДЫ ====================
+
+function applyPromo() {
+    var promo = $('#promoInput').val();
+
+    if (!promo) {
+        showNotification('Введите промокод', 'warning');
+        return;
+    }
+
+    $.ajax({
+        url: '/api/cart/apply-promo',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ promo: promo }),
+        success: function(response) {
+            if (response.success) {
+                updateCartTotals();
+                showNotification('Промокод применен! Скидка: ' + response.discount + ' ₽', 'success');
+            } else {
+                showNotification(response.error || 'Неверный промокод', 'error');
+            }
+        },
+        error: function() {
+            showNotification('Ошибка при применении промокода', 'error');
+        }
+    });
+}
+
+// ==================== ЗАКАЗЫ ====================
+
+function updateOrderStatus(orderId) {
+    var status = $('#orderStatus').val();
+    var comment = $('#statusComment').val();
+    var trackingNumber = $('#trackingNumber').val();
+
+    $.ajax({
+        url: '/api/order/' + orderId + '/status',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            status: status,
+            comment: comment,
+            tracking_number: trackingNumber
+        }),
+        success: function(response) {
+            if (response.success) {
+                showNotification('Статус заказа обновлен', 'success');
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                showNotification(response.error || 'Ошибка при обновлении статуса', 'error');
+            }
+        },
+        error: function() {
+            showNotification('Ошибка сервера', 'error');
+        }
+    });
+}
+
+function cancelOrder(orderId) {
+    if (!confirm('Вы уверены, что хотите отменить заказ?')) return;
+
+    $.ajax({
+        url: '/api/order/' + orderId + '/cancel',
+        method: 'POST',
+        success: function(response) {
+            if (response.success) {
+                showNotification('Заказ отменен', 'success');
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                showNotification(response.error || 'Ошибка при отмене заказа', 'error');
+            }
+        },
+        error: function() {
+            showNotification('Ошибка сервера', 'error');
+        }
+    });
+}
+
+function trackOrder(orderId) {
+    $.ajax({
+        url: '/api/order/' + orderId + '/track',
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                displayTrackingInfo(response);
+            }
+        }
+    });
+}
+
+function displayTrackingInfo(data) {
+    var modal = `
+        <div class="modal fade" id="trackingModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Отслеживание заказа #${data.order_number}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="tracking-info">
+                            <p><strong>Текущий статус:</strong> ${data.current_status}</p>
+                            ${data.tracking_number ? '<p><strong>Трек-номер:</strong> ' + data.tracking_number + '</p>' : ''}
+                            ${data.estimated_delivery ? '<p><strong>Ожидаемая дата:</strong> ' + data.estimated_delivery + '</p>' : ''}
+
+                            <h6 class="mt-4">История статусов:</h6>
+                            <div class="timeline">
+                                ${data.status_history.map(function(item) {
+                                    return `
+                                        <div class="timeline-item d-flex gap-3 mb-3">
+                                            <div class="timeline-dot"></div>
+                                            <div>
+                                                <div class="fw-bold">${item.status}</div>
+                                                <div class="small text-muted">${item.created_at}</div>
+                                                ${item.comment ? '<div class="small">' + item.comment + '</div>' : ''}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    $('body').append(modal);
+    $('#trackingModal').modal('show');
+    $('#trackingModal').on('hidden.bs.modal', function() {
+        $(this).remove();
+    });
+}
+
+// ==================== ИЗБРАННОЕ ====================
+
+function toggleFavorite(productId) {
+    $.ajax({
+        url: '/api/favorites/' + productId + '/toggle',
+        method: 'POST',
+        success: function(response) {
+            if (response.success) {
+                var $btn = $('[data-product-id="' + productId + '"].favorite-btn');
+                if (response.is_favorite) {
+                    $btn.find('i').removeClass('far').addClass('fas');
+                    showNotification('Добавлено в избранное', 'success');
+                } else {
+                    $btn.find('i').removeClass('fas').addClass('far');
+                    showNotification('Удалено из избранного', 'info');
+                }
+            }
+        }
+    });
+}
+
+// ==================== УВЕДОМЛЕНИЯ (TOAST) ====================
+
+function showNotification(message, type = 'info') {
+    var icon = {
+        'success': 'check-circle',
+        'error': 'exclamation-circle',
+        'warning': 'exclamation-triangle',
+        'info': 'info-circle'
+    };
+
+    var toast = `
+        <div class="toast-notification position-fixed top-0 end-0 m-3 p-3 bg-white rounded-3 shadow-lg"
+             style="z-index: 9999; min-width: 300px; animation: slideIn 0.3s;">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-${icon[type]} text-${type} fa-2x me-3"></i>
+                <div class="flex-grow-1">
+                    <div class="fw-bold">${message}</div>
+                </div>
+                <button type="button" class="btn-close" onclick="this.closest('.toast-notification').remove()"></button>
+            </div>
+        </div>
+    `;
+
+    $('body').append(toast);
+
+    setTimeout(function() {
+        $('.toast-notification').fadeOut(300, function() {
+            $(this).remove();
+        });
+    }, 3000);
+}
+
+// ==================== ЗАГРУЗКА ====================
+
+function showLoading() {
+    if ($('#loading-overlay').length === 0) {
+        $('body').append(`
+            <div id="loading-overlay" class="position-fixed top-0 start-0 w-100 h-100"
+                 style="background: rgba(255,255,255,0.8); z-index: 99999;">
+                <div class="position-absolute top-50 start-50 translate-middle text-center">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                </div>
+            </div>
+        `);
+    }
+}
+
+function hideLoading() {
+    $('#loading-overlay').fadeOut(300, function() {
+        $(this).remove();
+    });
+}
+
+// ==================== АНИМАЦИИ ====================
+
+function initScrollAnimations() {
+    var elements = document.querySelectorAll('.animate-on-scroll');
+
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('fade-in');
+            }
+        });
+    }, { threshold: 0.1 });
+
+    elements.forEach(function(element) {
+        observer.observe(element);
+    });
+}
+
+// ==================== ЛЕНИВАЯ ЗАГРУЗКА ====================
+
+function initLazyLoading() {
+    var images = document.querySelectorAll('img[data-src]');
+
+    var imageObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                var img = entry.target;
+                img.src = img.dataset.src;
+                img.classList.add('loaded');
+                imageObserver.unobserve(img);
+            }
+        });
+    });
+
+    images.forEach(function(img) {
+        imageObserver.observe(img);
+    });
+}
+
+// ==================== ГАЛЕРЕЯ ТОВАРОВ ====================
+
+function initProductGallery() {
+    var mainImage = $('#mainImage');
+    var thumbnails = $('.thumbnail');
+
+    thumbnails.on('click', function() {
+        var src = $(this).attr('src');
+        mainImage.attr('src', src);
+        thumbnails.removeClass('active');
+        $(this).addClass('active');
+    });
+
+    // Навигация
+    $('#prevImage').on('click', function() {
+        var current = $('.thumbnail.active');
+        var prev = current.closest('.col-3').prev().find('.thumbnail');
+        if (prev.length) {
+            prev.click();
+        }
+    });
+
+    $('#nextImage').on('click', function() {
+        var current = $('.thumbnail.active');
+        var next = current.closest('.col-3').next().find('.thumbnail');
+        if (next.length) {
+            next.click();
+        }
+    });
+}
+
+// ==================== ЧАТ ====================
+
+function initChat() {
+    $('#chatForm').on('submit', function(e) {
+        e.preventDefault();
+        var message = $('#chatMessage').val();
+
+        if (!message.trim()) return;
+
+        $.ajax({
+            url: '/api/chat/send',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                recipient_id: $(this).data('recipient'),
+                message: message
+            }),
+            success: function(response) {
+                if (response.success) {
+                    $('#chatMessage').val('');
+                    appendMessage(response.message);
+                }
+            }
+        });
+    });
+}
+
+function appendMessage(message) {
+    var html = `
+        <div class="chat-message my-2 d-flex justify-content-end">
+            <div class="bg-primary text-white rounded-3 p-3" style="max-width: 70%;">
+                ${message}
+                <div class="small text-white-50">Только что</div>
+            </div>
+        </div>
+    `;
+    $('#chatMessages').append(html);
+    $('#chatMessages').scrollTop($('#chatMessages')[0].scrollHeight);
+}
+
+// ==================== ЭКСПОРТ ФУНКЦИЙ ====================
+
+// Делаем функции глобально доступными
+window.addToCart = addToCart;
+window.removeFromCart = removeFromCart;
+window.updateCartItemQuantity = updateCartItemQuantity;
+window.applyPromo = applyPromo;
+window.toggleFavorite = toggleFavorite;
+window.updateOrderStatus = updateOrderStatus;
+window.cancelOrder = cancelOrder;
+window.trackOrder = trackOrder;
+window.submitReview = submitReview;
+window.showNotification = showNotification;

@@ -1,29 +1,62 @@
 {% extends "base.html" %}
 
-{% block title %}Kildear - Ошибка сервера{% endblock %}
+{% block title %}Ошибка сервера{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 text-center py-5">
-        <i class="fas fa-exclamation-triangle fa-5x text-danger mb-4"></i>
-        <h1 class="h3 mb-4">Что-то пошло не так</h1>
-        <p class="text-muted mb-4">
-            На сервере произошла ошибка. Мы уже работаем над её исправлением.
-        </p>
-        <div class="d-flex gap-3 justify-content-center">
-            <a href="{{ url_for('index') }}" class="btn btn-primary">
-                <i class="fas fa-home me-2"></i>На главную
-            </a>
-            <button onclick="reportError()" class="btn btn-outline-danger">
-                <i class="fas fa-bug me-2"></i>Сообщить об ошибке
-            </button>
+<div class="row justify-content-center min-vh-75 align-items-center">
+    <div class="col-md-8 col-lg-6 text-center">
+        <div class="error-page py-5">
+            <div class="error-icon mb-4">
+                <i class="fas fa-exclamation-triangle fa-5x text-warning"></i>
+                <h1 class="display-1 fw-bold text-warning mt-3">500</h1>
+            </div>
+
+            <h2 class="fw-bold mb-3">Что-то пошло не так</h2>
+            <p class="lead text-muted mb-4">
+                На сервере произошла ошибка. Наши специалисты уже работают над её устранением.<br>
+                Пожалуйста, попробуйте позже.
+            </p>
+
+            <div class="action-buttons mb-5">
+                <a href="{{ url_for('index') }}" class="btn btn-primary rounded-pill px-5 py-3">
+                    <i class="fas fa-home me-2"></i>Вернуться на главную
+                </a>
+            </div>
+
+            <div class="error-details bg-light rounded-4 p-4 text-start">
+                <h6 class="fw-bold mb-3">Что можно сделать:</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-redo-alt text-primary me-2"></i>
+                        <a href="#" onclick="location.reload()" class="text-decoration-none">Обновить страницу</a>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-clock text-primary me-2"></i>
+                        Подождать несколько минут и попробовать снова
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-envelope text-primary me-2"></i>
+                        <a href="#" class="text-decoration-none">Сообщить об ошибке</a>
+                    </li>
+                </ul>
+
+                {% if error_id %}
+                <div class="alert alert-secondary mt-3">
+                    <small>
+                        <strong>ID ошибки:</strong> {{ error_id }}<br>
+                        Сообщите этот ID в службу поддержки
+                    </small>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-function reportError() {
-    Kildear.showNotification('Спасибо! Мы получили информацию об ошибке', 'success');
+// Автоматическая отправка отчета об ошибке
+window.onload = function() {
+    console.log('Error occurred on page: ' + window.location.href);
 }
 </script>
 {% endblock %}

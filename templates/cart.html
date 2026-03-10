@@ -1,251 +1,256 @@
 {% extends "base.html" %}
 
-{% block title %}Kildear - Корзина{% endblock %}
+{% block title %}Корзина{% endblock %}
 
 {% block content %}
-<h2 class="h3 mb-4">Корзина</h2>
-
 <div class="row">
-    <div class="col-md-8">
-        {% if cart_items %}
-            {% for item in cart_items %}
-            <div class="card shadow-sm border-0 mb-3 cart-item" data-item-id="{{ item.id }}">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-2">
-                            {% if item.listing.images and item.listing.images[0] %}
-                            <img src="{{ item.listing.images[0] }}" class="img-fluid rounded" alt="{{ item.listing.title }}">
-                            {% else %}
-                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 80px;">
-                                <i class="fas fa-image fa-2x text-secondary"></i>
-                            </div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-4">
-                            <h6 class="mb-1">
-                                <a href="{{ url_for('listing_detail', listing_id=item.listing.id) }}" class="text-decoration-none text-dark">
-                                    {{ item.listing.title }}
-                                </a>
-                            </h6>
-                            <small class="text-muted">Продавец: {{ item.listing.seller.full_name }}</small>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="input-group input-group-sm">
-                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity({{ item.id }}, -1)">-</button>
-                                <input type="number" class="form-control text-center quantity-input" value="{{ item.quantity }}"
-                                       min="1" max="{{ item.listing.quantity }}" data-item-id="{{ item.id }}" readonly>
-                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity({{ item.id }}, 1)">+</button>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="fw-bold">{{ "%.0f"|format(item.listing.price * item.quantity) }} ₽</div>
-                            <small class="text-muted">{{ "%.0f"|format(item.listing.price) }} ₽/шт</small>
-                        </div>
-                        <div class="col-md-2 text-end">
-                            <button class="btn btn-sm btn-outline-danger" onclick="removeFromCart({{ item.id }})">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h4 class="fw-bold mb-0">Корзина (<span id="cartCount">{{ cart.items|length }}</span>)</h4>
             </div>
-            {% endfor %}
 
-            <!-- Промокод -->
-            <div class="card shadow-sm border-0 mt-4">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="promoCode" placeholder="Промокод">
-                                <button class="btn btn-outline-primary" type="button" onclick="applyPromo()">Применить</button>
+            <div class="card-body p-4">
+                {% if cart.items %}
+                <div class="cart-items">
+                    {% for item in cart.items %}
+                    <div class="cart-item border-bottom pb-3 mb-3" data-item-id="{{ item.id }}">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                <img src="{{ item.image }}" class="img-fluid rounded-3" style="max-height: 80px; object-fit: cover;">
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="fw-bold mb-1">{{ item.title }}</h6>
+                                <p class="text-muted small mb-0">Продавец: {{ item.seller }}</p>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="quantity-control d-flex align-items-center">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="updateQuantity({{ item.id }}, -1)">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input type="number" class="form-control form-control-sm text-center mx-2"
+                                           value="{{ item.quantity }}" min="1" style="width: 60px;"
+                                           onchange="updateQuantityInput({{ item.id }}, this.value)">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="updateQuantity({{ item.id }}, 1)">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <span class="fw-bold text-primary item-price">{{ item.price * item.quantity }} ₽</span>
+                            </div>
+                            <div class="col-md-1 text-end">
+                                <button class="btn btn-link text-danger" onclick="removeFromCart({{ item.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
+                    {% endfor %}
                 </div>
+
+                <div class="mt-4 d-flex justify-content-between align-items-center">
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary rounded-pill">
+                        <i class="fas fa-arrow-left me-2"></i>Продолжить покупки
+                    </a>
+                    <button class="btn btn-outline-danger rounded-pill" onclick="clearCart()">
+                        <i class="fas fa-trash me-2"></i>Очистить корзину
+                    </button>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">Ваша корзина пуста</h5>
+                    <p class="text-muted mb-3">Добавьте товары, чтобы оформить заказ</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary rounded-pill px-5">
+                        Перейти к покупкам
+                    </a>
+                </div>
+                {% endif %}
             </div>
-        {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
-                <h5>Корзина пуста</h5>
-                <p class="text-muted">Перейдите в каталог, чтобы добавить товары</p>
-                <a href="{{ url_for('index') }}" class="btn btn-primary">Перейти к покупкам</a>
-            </div>
-        {% endif %}
+        </div>
     </div>
 
-    <!-- Итого -->
-    {% if cart_items %}
-    <div class="col-md-4">
-        <div class="card shadow-sm border-0 sticky-top" style="top: 20px;">
-            <div class="card-body">
-                <h5 class="card-title mb-4">Ваш заказ</h5>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 100px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">Ваш заказ</h5>
 
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Товары ({{ cart_items|length }})</span>
-                    <span class="fw-bold" id="subtotal">{{ "%.0f"|format(total) }} ₽</span>
-                </div>
-
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Доставка</span>
-                    <span class="text-success">Бесплатно</span>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Товары ({{ cart.items|length }})</span>
+                        <span id="subtotal">{{ cart.subtotal }} ₽</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Доставка</span>
+                        <span id="delivery">{{ cart.delivery }} ₽</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Скидка</span>
+                        <span class="text-success" id="discount">-{{ cart.discount }} ₽</span>
+                    </div>
                 </div>
 
                 <hr>
 
                 <div class="d-flex justify-content-between mb-4">
-                    <span class="h6">Итого</span>
-                    <span class="h5 fw-bold text-primary" id="total">{{ "%.0f"|format(total) }} ₽</span>
+                    <span class="fw-bold">Итого:</span>
+                    <span class="fw-bold text-primary h5" id="total">{{ cart.total }} ₽</span>
                 </div>
 
-                <!-- Выбор ПВЗ -->
-                <div class="mb-3">
-                    <label class="form-label">Пункт выдачи</label>
-                    <select class="form-select" id="pvzSelect">
-                        <option value="">Выберите ПВЗ</option>
-                        {% for pvz in pvz_points %}
-                        <option value="{{ pvz.id }}">{{ pvz.address }}</option>
-                        {% endfor %}
+                <div class="mb-4">
+                    <label class="form-label">Промокод</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control rounded-start-pill" placeholder="Введите промокод" id="promoCode">
+                        <button class="btn btn-primary rounded-end-pill" onclick="applyPromo()">Применить</button>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Способ доставки</label>
+                    <select class="form-select" id="deliveryMethod" onchange="updateDelivery()">
+                        <option value="standard">Стандартная (3-5 дней) - 300 ₽</option>
+                        <option value="express">Экспресс (1-2 дня) - 500 ₽</option>
+                        <option value="pickup">Самовывоз - бесплатно</option>
                     </select>
                 </div>
 
-                <!-- Способ оплаты -->
-                <div class="mb-4">
-                    <label class="form-label">Способ оплаты</label>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="payment" id="cardOnline" checked>
-                        <label class="form-check-label" for="cardOnline">
-                            Картой онлайн
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="payment" id="cardOnDelivery">
-                        <label class="form-check-label" for="cardOnDelivery">
-                            Картой при получении
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="payment" id="cash">
-                        <label class="form-check-label" for="cash">
-                            Наличными
-                        </label>
-                    </div>
-                </div>
-
-                <button class="btn btn-primary w-100 py-3" onclick="checkout()" id="checkoutBtn">
-                    Оформить заказ
+                <button class="btn btn-primary w-100 rounded-pill py-3 fw-bold mb-3" onclick="checkout()" {% if not cart.items %}disabled{% endif %}>
+                    <i class="fas fa-check-circle me-2"></i>Оформить заказ
                 </button>
 
-                <p class="small text-muted text-center mt-3">
-                    <i class="fas fa-lock me-1"></i>
-                    Безопасная оплата
-                </p>
+                <div class="payment-methods text-center">
+                    <p class="text-muted small mb-2">Принимаем к оплате:</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <i class="fab fa-cc-visa fa-2x text-muted"></i>
+                        <i class="fab fa-cc-mastercard fa-2x text-muted"></i>
+                        <i class="fab fa-cc-mir fa-2x text-muted"></i>
+                        <i class="fab fa-cc-paypal fa-2x text-muted"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    {% endif %}
 </div>
 
 <script>
 function updateQuantity(itemId, change) {
-    const input = $(`.quantity-input[data-item-id="${itemId}"]`);
-    let newValue = parseInt(input.val()) + change;
-    const maxValue = parseInt(input.attr('max'));
+    const input = document.querySelector(`[data-item-id="${itemId}"] input`);
+    let newValue = parseInt(input.value) + change;
+    if(newValue < 1) newValue = 1;
+    input.value = newValue;
+    updateQuantityInput(itemId, newValue);
+}
 
-    if (newValue < 1 || newValue > maxValue) return;
-
-    $.ajax({
-        url: `/cart/update/${itemId}`,
+function updateQuantityInput(itemId, quantity) {
+    fetch(`/api/cart/update/${itemId}`, {
         method: 'POST',
-        data: { quantity: newValue },
         headers: {
-            'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+            'Content-Type': 'application/json',
         },
-        success: function(response) {
-            location.reload();
-        },
-        error: function() {
-            Kildear.showNotification('Ошибка при обновлении количества', 'danger');
+        body: JSON.stringify({ quantity: quantity })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            updateCartTotals();
         }
     });
 }
 
 function removeFromCart(itemId) {
-    if (confirm('Удалить товар из корзины?')) {
-        $.ajax({
-            url: `/cart/remove/${itemId}`,
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function() {
-                $(`.cart-item[data-item-id="${itemId}"]`).fadeOut(300, function() {
-                    location.reload();
-                });
-            },
-            error: function() {
-                Kildear.showNotification('Ошибка при удалении', 'danger');
+    if(confirm('Удалить товар из корзины?')) {
+        fetch(`/api/cart/remove/${itemId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                location.reload();
             }
         });
     }
 }
 
+function clearCart() {
+    if(confirm('Очистить корзину?')) {
+        fetch('/api/cart/clear', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+function updateCartTotals() {
+    fetch('/api/cart/totals')
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('subtotal').textContent = data.subtotal + ' ₽';
+        document.getElementById('total').textContent = data.total + ' ₽';
+        document.getElementById('cartCount').textContent = data.count;
+    });
+}
+
 function applyPromo() {
-    const promo = $('#promoCode').val();
-    if (!promo) {
-        Kildear.showNotification('Введите промокод', 'warning');
-        return;
+    const promo = document.getElementById('promoCode').value;
+    fetch('/api/cart/apply-promo', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ promo: promo })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            updateCartTotals();
+            document.getElementById('discount').textContent = '-' + data.discount + ' ₽';
+            alert('Промокод применен!');
+        } else {
+            alert('Неверный промокод');
+        }
+    });
+}
+
+function updateDelivery() {
+    const method = document.getElementById('deliveryMethod').value;
+    let deliveryPrice = 0;
+
+    switch(method) {
+        case 'standard':
+            deliveryPrice = 300;
+            break;
+        case 'express':
+            deliveryPrice = 500;
+            break;
+        case 'pickup':
+            deliveryPrice = 0;
+            break;
     }
 
-    $.ajax({
-        url: '/api/apply-promo',
+    fetch('/api/cart/update-delivery', {
         method: 'POST',
-        data: { promo: promo },
         headers: {
-            'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+            'Content-Type': 'application/json',
         },
-        success: function(response) {
-            Kildear.showNotification('Промокод применен! Скидка ' + response.discount + '%', 'success');
-            $('#subtotal').text(response.new_total + ' ₽');
-            $('#total').text(response.new_total + ' ₽');
-        },
-        error: function() {
-            Kildear.showNotification('Неверный промокод', 'danger');
+        body: JSON.stringify({ delivery: deliveryPrice })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            document.getElementById('delivery').textContent = deliveryPrice + ' ₽';
+            updateCartTotals();
         }
     });
 }
 
 function checkout() {
-    const pvzId = $('#pvzSelect').val();
-    const paymentMethod = $('input[name="payment"]:checked').attr('id');
-
-    if (!pvzId) {
-        Kildear.showNotification('Выберите пункт выдачи', 'warning');
-        return;
-    }
-
-    $('#checkoutBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Оформление...');
-
-    $.ajax({
-        url: '{{ url_for("checkout") }}',
-        method: 'POST',
-        data: {
-            pvz_id: pvzId,
-            payment_method: paymentMethod
-        },
-        headers: {
-            'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
-        },
-        success: function(response) {
-            if (response.redirect) {
-                window.location.href = response.redirect;
-            }
-        },
-        error: function(xhr) {
-            $('#checkoutBtn').prop('disabled', false).html('Оформить заказ');
-            Kildear.showNotification(xhr.responseJSON.error || 'Ошибка при оформлении заказа', 'danger');
-        }
-    });
+    window.location.href = "{{ url_for('checkout') }}";
 }
 </script>
 {% endblock %}

@@ -1,206 +1,283 @@
 {% extends "base.html" %}
 
-{% block title %}Kildear - Кабинет продавца{% endblock %}
+{% block title %}Панель продавца{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-3">
-        <!-- Меню продавца -->
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-body">
-                <div class="text-center mb-3">
-                    <i class="fas fa-store fa-3x text-primary"></i>
-                    <h5 class="mt-2">{{ current_user.full_name }}</h5>
-                    <span class="badge bg-success">Продавец</span>
-                </div>
-
-                <hr>
-
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('create_listing') }}" class="btn btn-primary">
-                        <i class="fas fa-plus-circle me-2"></i>Новое объявление
-                    </a>
-                    <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#statsModal">
-                        <i class="fas fa-chart-line me-2"></i>Статистика
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Статистика продавца -->
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
-                <h6 class="card-title">Общая статистика</h6>
-                <hr>
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Всего продаж:</span>
-                        <span class="fw-bold">{{ orders_count }}</span>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4 bg-primary text-white">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h2 class="fw-bold mb-2">Панель продавца</h2>
+                        <p class="mb-0">Управляйте своими товарами, заказами и аналитикой</p>
                     </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Выручка:</span>
-                        <span class="fw-bold text-success">{{ "%.2f"|format(total_sales) }} ₽</span>
+                    <div class="col-auto">
+                        <a href="{{ url_for('create_listing') }}" class="btn btn-light rounded-pill px-4">
+                            <i class="fas fa-plus-circle me-2"></i>Новый товар
+                        </a>
                     </div>
-                    <div class="d-flex justify-content-between">
-                        <span>Активных товаров:</span>
-                        <span class="fw-bold">{{ listings|selectattr('status', 'equalto', 'active')|list|length }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-9">
-        <ul class="nav nav-tabs mb-4" id="sellerTabs">
-            <li class="nav-item">
-                <a class="nav-link active" data-bs-toggle="tab" href="#active">Активные</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#pending">На модерации</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#sold">Проданные</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#orders">Заказы</a>
-            </li>
-        </ul>
-
-        <div class="tab-content">
-            <!-- Активные объявления -->
-            <div class="tab-pane fade show active" id="active">
-                {% if listings %}
-                <div class="row g-4">
-                    {% for listing in listings if listing.status == 'active' %}
-                    <div class="col-md-4">
-                        <div class="card h-100 shadow-sm border-0">
-                            {% if listing.images and listing.images[0] %}
-                            <img src="{{ listing.images[0] }}" class="card-img-top" style="height: 150px; object-fit: cover;">
-                            {% else %}
-                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
-                                <i class="fas fa-image fa-2x text-secondary"></i>
-                            </div>
-                            {% endif %}
-
-                            <div class="card-body">
-                                <h6 class="card-title">{{ listing.title[:30] }}</h6>
-                                <p class="card-text">
-                                    <span class="fw-bold text-primary">{{ "%.0f"|format(listing.price) }} ₽</span>
-                                    <br>
-                                    <small class="text-muted">Осталось: {{ listing.quantity }} шт.</small>
-                                </p>
-                                <div class="d-flex justify-content-between">
-                                    <span class="badge bg-info">Просмотров: {{ listing.views }}</span>
-                                    <div class="btn-group btn-group-sm">
-                                        <a href="{{ url_for('edit_listing', listing_id=listing.id) }}" class="btn btn-outline-primary">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button class="btn btn-outline-danger" onclick="deleteListing({{ listing.id }})">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="text-center py-5">
-                    <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
-                    <h5>У вас нет активных объявлений</h5>
-                    <a href="{{ url_for('create_listing') }}" class="btn btn-primary mt-3">
-                        Создать первое объявление
-                    </a>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- На модерации -->
-            <div class="tab-pane fade" id="pending">
-                <div class="row g-4">
-                    {% for listing in listings if not listing.is_moderated %}
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h6>{{ listing.title }}</h6>
-                                <span class="badge bg-warning">На проверке</span>
-                                <p class="mt-2 small">
-                                    Создано: {{ listing.created_at.strftime('%d.%m.%Y') }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="col-12 text-center py-4">
-                        <p class="text-muted">Нет объявлений на модерации</p>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Проданные -->
-            <div class="tab-pane fade" id="sold">
-                <!-- Аналогично -->
-            </div>
-
-            <!-- Заказы -->
-            <div class="tab-pane fade" id="orders">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>№ заказа</th>
-                                <th>Товар</th>
-                                <th>Кол-во</th>
-                                <th>Сумма</th>
-                                <th>Статус</th>
-                                <th>Дата</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for order_item in order_items %}
-                            <tr>
-                                <td>#{{ order_item.order.order_number[-8:] }}</td>
-                                <td>{{ order_item.listing.title[:20] }}</td>
-                                <td>{{ order_item.quantity }}</td>
-                                <td>{{ "%.0f"|format(order_item.price * order_item.quantity) }} ₽</td>
-                                <td>
-                                    <span class="status-badge status-{{ order_item.order.status }}">
-                                        {{ order_item.order.status }}
-                                    </span>
-                                </td>
-                                <td>{{ order_item.order.created_at.strftime('%d.%m.%Y') }}</td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="6" class="text-center py-4">
-                                    Нет заказов
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Статистика -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-primary bg-opacity-10 rounded-circle p-3">
+                        <i class="fas fa-shopping-bag fa-2x text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-1">Активных товаров</h6>
+                        <h4 class="fw-bold mb-0">{{ stats.active_products }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-success bg-opacity-10 rounded-circle p-3">
+                        <i class="fas fa-dollar-sign fa-2x text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-1">Продажи (месяц)</h6>
+                        <h4 class="fw-bold mb-0">{{ stats.monthly_sales }} ₽</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-warning bg-opacity-10 rounded-circle p-3">
+                        <i class="fas fa-truck fa-2x text-warning"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-1">Активных заказов</h6>
+                        <h4 class="fw-bold mb-0">{{ stats.active_orders }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-danger bg-opacity-10 rounded-circle p-3">
+                        <i class="fas fa-star fa-2x text-danger"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-1">Рейтинг</h6>
+                        <h4 class="fw-bold mb-0">{{ stats.rating }}/5</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- График продаж -->
+    <div class="col-lg-8 mb-4">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-0">Продажи за последние 30 дней</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="salesChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Последние заказы -->
+    <div class="col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">Последние заказы</h5>
+                <a href="{{ url_for('seller_orders') }}" class="btn btn-link text-primary p-0">Все</a>
+            </div>
+            <div class="card-body p-4">
+                {% for order in recent_orders %}
+                <div class="order-item border-bottom pb-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="fw-bold mb-1">Заказ #{{ order.id }}</h6>
+                            <p class="text-muted small mb-0">{{ order.customer_name }}</p>
+                        </div>
+                        <span class="badge bg-{{ order.status_color }}">{{ order.status }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-primary">{{ order.total }} ₽</span>
+                        <small class="text-muted">{{ order.created_at }}</small>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-center text-muted py-4">Пока нет заказов</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Мои товары -->
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0">Мои товары</h5>
+        <div class="d-flex gap-2">
+            <select class="form-select form-select-sm" style="width: auto;" onchange="filterProducts(this.value)">
+                <option value="all">Все товары</option>
+                <option value="active">Активные</option>
+                <option value="sold">Проданные</option>
+                <option value="inactive">Неактивные</option>
+            </select>
+            <input type="text" class="form-control form-control-sm" placeholder="Поиск..." id="searchProducts">
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th>Цена</th>
+                        <th>Просмотры</th>
+                        <th>Продажи</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="{{ product.image }}" class="rounded-3 me-3" width="50" height="50" style="object-fit: cover;">
+                                <div>
+                                    <h6 class="fw-bold mb-1">{{ product.title }}</h6>
+                                    <small class="text-muted">ID: {{ product.id }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="fw-bold">{{ product.price }} ₽</td>
+                        <td>{{ product.views }}</td>
+                        <td>{{ product.sales }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if product.status == 'active' else 'secondary' }}">
+                                {{ product.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('edit_listing', listing_id=product.id) }}"
+                                   class="btn btn-sm btn-outline-primary rounded-start-pill">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{{ url_for('listing_detail', listing_id=product.id) }}"
+                                   class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger rounded-end-pill"
+                                        onclick="deleteProduct({{ product.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-function deleteListing(listingId) {
-    if (confirm('Вы уверены, что хотите удалить это объявление?')) {
-        $.ajax({
-            url: `/listing/${listingId}/delete`,
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+// График продаж
+const ctx = document.getElementById('salesChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ chart.labels|tojson }},
+        datasets: [{
+            label: 'Продажи',
+            data: {{ chart.data|tojson }},
+            borderColor: '#4e73df',
+            backgroundColor: 'rgba(78, 115, 223, 0.05)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
             },
-            success: function() {
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Поиск товаров
+document.getElementById('searchProducts').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+function filterProducts(status) {
+    const rows = document.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        if(status === 'all') {
+            row.style.display = '';
+        } else {
+            const productStatus = row.querySelector('.badge').textContent.toLowerCase();
+            row.style.display = productStatus === status ? '' : 'none';
+        }
+    });
+}
+
+function deleteProduct(productId) {
+    if(confirm('Удалить этот товар?')) {
+        fetch(`/api/products/${productId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
                 location.reload();
-            },
-            error: function() {
-                Kildear.showNotification('Ошибка при удалении', 'danger');
             }
         });
     }

@@ -1,135 +1,123 @@
 :root {
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
-    --secondary: #64748b;
-    --success: #10b981;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --dark: #1e293b;
-    --light: #f8fafc;
+    --primary-color: #4e73df;
+    --secondary-color: #1cc88a;
+    --danger-color: #e74a3b;
+    --warning-color: #f6c23e;
+    --dark-bg: #2c3e50;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #f1f5f9;
-    color: var(--dark);
+    font-family: 'Inter', sans-serif;
+    background-color: #f8f9fc;
+    color: #333;
 }
 
-.brand-gradient {
-    font-size: 1.8rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--dark), var(--primary));
+/* Навигация */
+.navbar {
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     background-clip: text;
-    color: transparent;
-    letter-spacing: -0.02em;
 }
 
 /* Карточки товаров */
 .product-card {
-    background: white;
-    border-radius: 16px;
+    border: none;
+    border-radius: 15px;
     overflow: hidden;
-    transition: all 0.3s ease;
-    border: 1px solid #e2e8f0;
+    transition: transform 0.3s, box-shadow 0.3s;
     height: 100%;
-    display: flex;
-    flex-direction: column;
+    background: white;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 }
 
 .product-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0,0,0,0.1);
-    border-color: var(--primary);
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(78, 115, 223, 0.1);
 }
 
 .product-image {
-    aspect-ratio: 1/1;
+    height: 200px;
     object-fit: cover;
-    background: #f1f5f9;
+    transition: transform 0.5s;
+}
+
+.product-card:hover .product-image {
+    transform: scale(1.05);
 }
 
 .product-badge {
     position: absolute;
-    top: 12px;
-    left: 12px;
-    background: var(--primary);
-    color: white;
-    padding: 4px 12px;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
 }
 
-.product-price {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--dark);
+.badge-new {
+    background: var(--secondary-color);
+    color: white;
 }
 
-.product-old-price {
-    font-size: 0.9rem;
-    color: var(--secondary);
-    text-decoration: line-through;
-    margin-left: 8px;
-}
-
-/* Рейтинг */
-.rating {
-    color: #fbbf24;
-    font-size: 0.9rem;
-}
-
-.rating span {
-    color: var(--secondary);
-    margin-left: 4px;
+.badge-sale {
+    background: var(--danger-color);
+    color: white;
 }
 
 /* Кнопки */
-.btn-primary {
-    background: var(--primary);
-    border-color: var(--primary);
-}
-
-.btn-primary:hover {
-    background: var(--primary-dark);
-    border-color: var(--primary-dark);
-}
-
-.btn-outline-primary {
-    color: var(--primary);
-    border-color: var(--primary);
-}
-
-.btn-outline-primary:hover {
-    background: var(--primary);
-    border-color: var(--primary);
-}
-
-/* Формы */
-.form-control:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
-}
-
-/* Категории */
-.category-icon {
-    width: 60px;
-    height: 60px;
-    background: var(--light);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 12px;
-    font-size: 24px;
-    color: var(--primary);
+.btn {
+    border-radius: 10px;
+    padding: 8px 20px;
+    font-weight: 500;
     transition: all 0.3s;
 }
 
-.category-card:hover .category-icon {
-    background: var(--primary);
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), #224abe);
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(78, 115, 223, 0.4);
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary-color);
     color: white;
+}
+
+/* Формы */
+.form-control, .form-select {
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    padding: 10px 15px;
+    transition: all 0.3s;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
 }
 
 /* Анимации */
@@ -145,104 +133,108 @@ body {
 }
 
 .fade-in {
-    animation: fadeIn 0.5s ease;
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Панели управления */
+.dashboard-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s;
+    border-left: 4px solid var(--primary-color);
+}
+
+.dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* Рейтинг */
+.rating {
+    color: var(--warning-color);
+    font-size: 0.9rem;
+}
+
+.rating .fa-star, .rating .fa-star-half-alt {
+    margin-right: 2px;
+}
+
+/* Категории */
+.category-pill {
+    display: inline-block;
+    padding: 8px 20px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 30px;
+    color: #666;
+    text-decoration: none;
+    transition: all 0.3s;
+    margin: 5px;
+}
+
+.category-pill:hover, .category-pill.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(78, 115, 223, 0.3);
+}
+
+/* Прогресс бар */
+.progress {
+    height: 10px;
+    border-radius: 5px;
+    background: #e0e0e0;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    border-radius: 5px;
+}
+
+/* Модальные окна */
+.modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    border-bottom: 1px solid #e0e0e0;
+    background: #f8f9fc;
+    border-radius: 20px 20px 0 0;
 }
 
 /* Адаптивность */
 @media (max-width: 768px) {
-    .product-price {
-        font-size: 1.2rem;
+    .product-image {
+        height: 150px;
     }
 
-    .brand-gradient {
-        font-size: 1.4rem;
+    .category-pill {
+        padding: 5px 15px;
+        font-size: 0.9rem;
+    }
+
+    .navbar form {
+        width: 100% !important;
+        margin: 10px 0;
     }
 }
 
-/* Статусы заказов */
-.status-badge {
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.status-pending {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.status-paid {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.status-shipped {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.status-delivered {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.status-cancelled {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-/* Кабинет продавца */
-.seller-stats {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--primary);
-}
-
-.stat-label {
-    color: var(--secondary);
-    font-size: 0.9rem;
-}
-
-/* Загрузка изображений */
-.upload-preview {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 8px;
-    border: 2px solid #e2e8f0;
-    margin-right: 8px;
-    margin-bottom: 8px;
-}
-
-.upload-preview:hover {
-    border-color: var(--primary);
-}
-
-/* Уведомления */
-.notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 9999;
-    min-width: 300px;
-    animation: slideIn 0.3s ease;
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
+/* Темная тема (опционально) */
+@media (prefers-color-scheme: dark) {
+    body.dark-theme {
+        background-color: #1a1a1a;
+        color: #f0f0f0;
     }
-    to {
-        transform: translateX(0);
-        opacity: 1;
+
+    .dark-theme .product-card,
+    .dark-theme .dashboard-card,
+    .dark-theme .modal-content {
+        background-color: #2d2d2d;
+        color: #f0f0f0;
     }
 }

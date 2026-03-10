@@ -1,65 +1,99 @@
 {% extends "base.html" %}
 
-{% block title %}Kildear - Вход{% endblock %}
+{% block title %}Вход в аккаунт{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-5">
-                <div class="text-center mb-4">
-                    <span class="brand-gradient">kildear.</span>
-                    <h2 class="h4 mt-3">Вход в аккаунт</h2>
-                </div>
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="card-header bg-primary text-white text-center py-4 border-0">
+                <i class="fas fa-store fa-3x mb-3"></i>
+                <h3 class="fw-bold">Добро пожаловать!</h3>
+                <p class="mb-0">Войдите в свой аккаунт Kildear</p>
+            </div>
 
-                <form method="POST" action="{{ url_for('login') }}" id="loginForm">
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" required
-                               placeholder="your@email.com">
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('login') }}" class="needs-validation" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-4">
+                        <label for="email" class="form-label fw-semibold">Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 rounded-start-pill">
+                                <i class="fas fa-envelope text-primary"></i>
+                            </span>
+                            {{ form.email(class="form-control rounded-end-pill", placeholder="ваш@email.ru", id="email") }}
+                        </div>
+                        {% if form.email.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.email.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Пароль</label>
-                        <input type="password" class="form-control" id="password" name="password" required
-                               placeholder="••••••••">
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-semibold">Пароль</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 rounded-start-pill">
+                                <i class="fas fa-lock text-primary"></i>
+                            </span>
+                            {{ form.password(class="form-control rounded-end-pill", placeholder="••••••••", id="password") }}
+                            <button class="btn btn-light border rounded-end-pill" type="button" id="togglePassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        {% if form.password.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.password.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
 
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
-                        <label class="form-check-label" for="remember">Запомнить меня</label>
+                    <div class="mb-4 d-flex justify-content-between align-items-center">
+                        <div class="form-check">
+                            {{ form.remember_me(class="form-check-input", id="remember") }}
+                            <label class="form-check-label" for="remember">Запомнить меня</label>
+                        </div>
+                        <a href="{{ url_for('reset_password_request') }}" class="text-primary text-decoration-none small">
+                            Забыли пароль?
+                        </a>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-3 mb-3 fw-bold">
                         <i class="fas fa-sign-in-alt me-2"></i>Войти
                     </button>
 
                     <div class="text-center">
-                        <a href="{{ url_for('register') }}" class="text-decoration-none">
-                            Нет аккаунта? Зарегистрируйтесь
-                        </a>
-                    </div>
-
-                    <hr class="my-4">
-
-                    <div class="text-center text-muted small">
-                        <a href="#" class="text-decoration-none">Забыли пароль?</a>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Безопасность -->
-        <div class="card mt-4 border-0 bg-light">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-shield-alt fa-2x text-primary me-3"></i>
-                    <div>
-                        <h6 class="mb-1">Безопасный вход</h6>
-                        <p class="small text-muted mb-0">
-                            2FA защита • Шифрование данных • Защита от брутфорса
+                        <p class="text-muted mb-0">
+                            Нет аккаунта?
+                            <a href="{{ url_for('register') }}" class="text-primary fw-bold text-decoration-none">
+                                Зарегистрироваться
+                            </a>
                         </p>
                     </div>
+                </form>
+
+                <div class="position-relative my-4">
+                    <hr>
+                    <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">
+                        или войдите через
+                    </span>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="#" class="btn btn-outline-primary rounded-circle p-3" style="width: 50px; height: 50px;">
+                        <i class="fab fa-vk"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-primary rounded-circle p-3" style="width: 50px; height: 50px;">
+                        <i class="fab fa-telegram"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-primary rounded-circle p-3" style="width: 50px; height: 50px;">
+                        <i class="fab fa-google"></i>
+                    </a>
                 </div>
             </div>
         </div>
@@ -67,31 +101,19 @@
 </div>
 
 <script>
-$(document).ready(function() {
-    $('#loginForm').on('submit', function(e) {
-        e.preventDefault();
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const password = document.getElementById('password');
+    const icon = this.querySelector('i');
 
-        if (!Kildear.validateForm('#loginForm')) {
-            return;
-        }
-
-        $.ajax({
-            url: $(this).attr('action'),
-            method: 'POST',
-            data: $(this).serialize(),
-            success: function(response) {
-                if (response.redirect) {
-                    window.location.href = response.redirect;
-                } else {
-                    window.location.href = '/';
-                }
-            },
-            error: function(xhr) {
-                const response = xhr.responseJSON;
-                Kildear.showNotification(response.error || 'Ошибка входа', 'danger');
-            }
-        });
-    });
+    if (password.type === 'password') {
+        password.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        password.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
 });
 </script>
 {% endblock %}

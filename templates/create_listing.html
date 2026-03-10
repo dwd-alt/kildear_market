@@ -1,170 +1,378 @@
 {% extends "base.html" %}
 
-{% block title %}Kildear - Создание объявления{% endblock %}
+{% block title %}Создать объявление{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0">Создание нового объявления</h5>
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-lg rounded-4">
+            <div class="card-header bg-primary text-white text-center py-4 border-0">
+                <i class="fas fa-plus-circle fa-3x mb-3"></i>
+                <h3 class="fw-bold">Создать новое объявление</h3>
+                <p class="mb-0">Расскажите о товаре, который хотите продать</p>
             </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('create_listing') }}" enctype="multipart/form-data" id="listingForm">
+
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data" id="listingForm">
+                    {{ form.hidden_tag() }}
+
                     <!-- Основная информация -->
-                    <div class="mb-3">
-                        <label class="form-label">Название товара <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="title" required maxlength="200">
-                        <div class="form-text">Максимум 200 символов</div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Название товара</label>
+                        <input type="text" class="form-control form-control-lg" name="title"
+                               placeholder="Например: iPhone 13 Pro Max 256GB" required>
+                        <div class="form-text">Будьте конкретны и укажите ключевые характеристики</div>
                     </div>
 
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Категория <span class="text-danger">*</span></label>
-                            <select class="form-select" name="category_id" required>
-                                <option value="">Выберите категорию</option>
-                                {% for category in categories %}
-                                <option value="{{ category.id }}">{{ category.name }}</option>
-                                {% endfor %}
-                            </select>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Категория</label>
+                        <select class="form-select form-select-lg" name="category" required>
+                            <option value="">Выберите категорию</option>
+                            <option value="electronics">Электроника</option>
+                            <option value="clothing">Одежда</option>
+                            <option value="home">Товары для дома</option>
+                            <option value="books">Книги</option>
+                            <option value="sports">Спорт</option>
+                            <option value="other">Другое</option>
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-bold">Цена (₽)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">₽</span>
+                                <input type="number" class="form-control" name="price"
+                                       placeholder="9999" min="0" step="0.01" required>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Состояние</label>
-                            <select class="form-select" name="condition">
+
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-bold">Состояние</label>
+                            <select class="form-select" name="condition" required>
                                 <option value="new">Новый</option>
+                                <option value="like_new">Как новый</option>
+                                <option value="good">Хорошее</option>
                                 <option value="used">Б/у</option>
-                                <option value="refurbished">Восстановленный</option>
                             </select>
                         </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Цена (₽) <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" name="price" required min="0" step="0.01">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Старая цена (₽)</label>
-                            <input type="number" class="form-control" name="old_price" min="0" step="0.01">
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Количество</label>
-                        <input type="number" class="form-control" name="quantity" value="1" min="1" max="999">
                     </div>
 
                     <!-- Описание -->
-                    <div class="mb-3">
-                        <label class="form-label">Описание <span class="text-danger">*</span></label>
-                        <textarea class="form-control" name="description" rows="6" required></textarea>
-                        <div class="form-text">Подробно опишите товар, его характеристики и состояние</div>
-                    </div>
-
-                    <!-- Изображения -->
-                    <div class="mb-3">
-                        <label class="form-label">Фотографии (до 5 шт)</label>
-                        <input type="file" class="form-control image-upload-input" name="images"
-                               accept="image/jpeg,image/png,image/webp" multiple>
-                        <div class="form-text">Максимальный размер файла: 5 МБ. Форматы: JPG, PNG, WEBP</div>
-
-                        <!-- Превью -->
-                        <div class="image-preview d-flex flex-wrap mt-3"></div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Описание</label>
+                        <textarea class="form-control" name="description" rows="6"
+                                  placeholder="Подробно опишите товар, его особенности, комплектацию, состояние..." required></textarea>
+                        <div class="form-text">Минимум 20 символов. Подробное описание увеличивает шансы на продажу</div>
                     </div>
 
                     <!-- Характеристики (динамические) -->
-                    <div class="mb-3">
-                        <label class="form-label">Характеристики</label>
-                        <div id="specsContainer">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Характеристики</label>
+                        <div id="specifications">
                             <div class="row mb-2">
                                 <div class="col-5">
-                                    <input type="text" class="form-control form-control-sm" placeholder="Название">
+                                    <input type="text" class="form-control" name="spec_key[]" placeholder="Характеристика">
                                 </div>
                                 <div class="col-5">
-                                    <input type="text" class="form-control form-control-sm" placeholder="Значение">
+                                    <input type="text" class="form-control" name="spec_value[]" placeholder="Значение">
                                 </div>
                                 <div class="col-2">
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSpec(this)">
+                                    <button type="button" class="btn btn-outline-danger remove-spec" style="display: none;">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSpec()">
-                            <i class="fas fa-plus me-1"></i>Добавить характеристику
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="addSpec">
+                            <i class="fas fa-plus me-2"></i>Добавить характеристику
                         </button>
+                    </div>
+
+                    <!-- Фотографии -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Фотографии</label>
+                        <div class="upload-area border rounded-4 p-4 text-center" id="dropZone">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                            <h5>Перетащите фотографии сюда</h5>
+                            <p class="text-muted mb-3">или</p>
+                            <label class="btn btn-primary rounded-pill px-5">
+                                <i class="fas fa-camera me-2"></i>Выберите файлы
+                                <input type="file" name="photos" multiple accept="image/*" style="display: none;" id="fileInput">
+                            </label>
+                            <div class="form-text mt-3">
+                                Максимум 10 фото. Форматы: JPG, PNG, GIF. Размер до 10MB
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-3" id="previewContainer"></div>
                     </div>
 
                     <!-- Доставка -->
                     <div class="mb-4">
-                        <label class="form-label">Способы доставки</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="delivery" value="pickup" checked>
-                            <label class="form-check-label">Самовывоз из ПВЗ</label>
+                        <label class="form-label fw-bold">Доставка</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="delivery_available" id="deliveryAvailable" checked>
+                            <label class="form-check-label" for="deliveryAvailable">
+                                Доставка по России
+                            </label>
                         </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="delivery" value="courier">
-                            <label class="form-check-label">Курьером</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="delivery" value="post">
-                            <label class="form-check-label">Почтой России</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="pickup_available" id="pickupAvailable" checked>
+                            <label class="form-check-label" for="pickupAvailable">
+                                Самовывоз
+                            </label>
                         </div>
                     </div>
 
-                    <hr>
-
-                    <!-- Условия -->
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="agreeTerms" required>
-                        <label class="form-check-label" for="agreeTerms">
-                            Я подтверждаю, что товар соответствует описанию, и согласен с
-                            <a href="#" target="_blank">правилами размещения объявлений</a>
-                        </label>
+                    <!-- Дополнительные опции -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Дополнительно</label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="bargain" id="bargain">
+                                    <label class="form-check-label" for="bargain">
+                                        Возможен торг
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="warranty" id="warranty">
+                                    <label class="form-check-label" for="warranty">
+                                        Есть гарантия
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="original" id="original">
+                                    <label class="form-check-label" for="original">
+                                        Оригинал
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary px-4">Опубликовать</button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="history.back()">Отмена</button>
+                    <hr class="my-4">
+
+                    <!-- Кнопки -->
+                    <div class="d-flex gap-3 justify-content-end">
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary rounded-pill px-5">
+                            Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary rounded-pill px-5" id="submitBtn">
+                            <i class="fas fa-check me-2"></i>Опубликовать
+                        </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Советы -->
+        <div class="card border-0 shadow-sm rounded-4 mt-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3"><i class="fas fa-lightbulb text-warning me-2"></i>Советы для успешной продажи</h5>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Добавьте качественные фотографии товара</li>
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Укажите реальное состояние товара</li>
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Подробно опишите характеристики</li>
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Установите конкурентоспособную цену</li>
+                    <li><i class="fas fa-check-circle text-success me-2"></i>Будьте на связи с покупателями</li>
+                </ul>
             </div>
         </div>
     </div>
 </div>
 
+<style>
+.upload-area {
+    border: 2px dashed #dee2e6;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+    border-color: var(--primary-color);
+    background-color: rgba(78, 115, 223, 0.05);
+}
+
+.preview-image {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 1;
+}
+
+.preview-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-image .remove-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    padding: 5px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+}
+</style>
+
 <script>
-function addSpec() {
-    const container = document.getElementById('specsContainer');
-    const row = document.createElement('div');
-    row.className = 'row mb-2';
-    row.innerHTML = `
-        <div class="col-5">
-            <input type="text" class="form-control form-control-sm" name="spec_name[]" placeholder="Название">
-        </div>
-        <div class="col-5">
-            <input type="text" class="form-control form-control-sm" name="spec_value[]" placeholder="Значение">
-        </div>
-        <div class="col-2">
-            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSpec(this)">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    `;
-    container.appendChild(row);
-}
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const previewContainer = document.getElementById('previewContainer');
+    const addSpecBtn = document.getElementById('addSpec');
+    const specifications = document.getElementById('specifications');
 
-function removeSpec(btn) {
-    btn.closest('.row').remove();
-}
+    // Drag and drop
+    dropZone.addEventListener('click', () => fileInput.click());
 
-// Валидация перед отправкой
-$('#listingForm').on('submit', function(e) {
-    const images = $('.image-upload-input')[0].files;
-    if (images.length === 0) {
+    dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
-        Kildear.showNotification('Добавьте хотя бы одну фотографию', 'warning');
-    }
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+
+        const files = e.dataTransfer.files;
+        handleFiles(files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+    });
+
+    // Добавление характеристик
+    addSpecBtn.addEventListener('click', () => {
+        const newRow = document.createElement('div');
+        newRow.className = 'row mb-2';
+        newRow.innerHTML = `
+            <div class="col-5">
+                <input type="text" class="form-control" name="spec_key[]" placeholder="Характеристика">
+            </div>
+            <div class="col-5">
+                <input type="text" class="form-control" name="spec_value[]" placeholder="Значение">
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-outline-danger remove-spec">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+
+        specifications.appendChild(newRow);
+
+        // Показываем кнопки удаления у всех строк кроме первой
+        document.querySelectorAll('.remove-spec').forEach(btn => {
+            btn.style.display = 'inline-block';
+        });
+    });
+
+    // Удаление характеристики
+    specifications.addEventListener('click', (e) => {
+        if(e.target.closest('.remove-spec')) {
+            const row = e.target.closest('.row');
+            row.remove();
+
+            // Если осталась только одна строка, скрываем у нее кнопку удаления
+            if(specifications.children.length === 1) {
+                specifications.querySelector('.remove-spec').style.display = 'none';
+            }
+        }
+    });
+
+    // Валидация формы
+    document.getElementById('listingForm').addEventListener('submit', function(e) {
+        const title = this.querySelector('[name="title"]').value;
+        const price = this.querySelector('[name="price"]').value;
+        const description = this.querySelector('[name="description"]').value;
+
+        if(title.length < 5) {
+            e.preventDefault();
+            alert('Название должно содержать минимум 5 символов');
+            return;
+        }
+
+        if(price <= 0) {
+            e.preventDefault();
+            alert('Укажите корректную цену');
+            return;
+        }
+
+        if(description.length < 20) {
+            e.preventDefault();
+            alert('Описание должно содержать минимум 20 символов');
+            return;
+        }
+
+        const files = fileInput.files;
+        if(files.length === 0) {
+            e.preventDefault();
+            alert('Добавьте хотя бы одно фото');
+            return;
+        }
+
+        if(files.length > 10) {
+            e.preventDefault();
+            alert('Максимум 10 фотографий');
+            return;
+        }
+
+        for(let file of files) {
+            if(file.size > 10 * 1024 * 1024) {
+                e.preventDefault();
+                alert('Размер файла не должен превышать 10MB');
+                return;
+            }
+        }
+    });
 });
+
+function handleFiles(files) {
+    const previewContainer = document.getElementById('previewContainer');
+
+    Array.from(files).forEach((file, index) => {
+        if(file.type.startsWith('image/')) {
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                const preview = document.createElement('div');
+                preview.className = 'col-md-3 col-6';
+                preview.innerHTML = `
+                    <div class="preview-image">
+                        <img src="${e.target.result}" alt="Preview ${index + 1}">
+                        <button type="button" class="remove-image" onclick="this.closest('.col-md-3').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                previewContainer.appendChild(preview);
+            };
+
+            reader.readAsDataURL(file);
+        }
+    });
+}
 </script>
 {% endblock %}

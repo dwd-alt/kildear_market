@@ -1,152 +1,158 @@
 {% extends "base.html" %}
 
-{% block title %}Kildear - Регистрация{% endblock %}
+{% block title %}Регистрация{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-5">
-                <div class="text-center mb-4">
-                    <span class="brand-gradient">kildear.</span>
-                    <h2 class="h4 mt-3">Создание аккаунта</h2>
-                </div>
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="card-header bg-primary text-white text-center py-4 border-0">
+                <i class="fas fa-user-plus fa-3x mb-3"></i>
+                <h3 class="fw-bold">Создать аккаунт</h3>
+                <p class="mb-0">Присоединяйтесь к Kildear прямо сейчас</p>
+            </div>
 
-                <form method="POST" action="{{ url_for('register') }}" id="registerForm">
-                    <div class="mb-3">
-                        <label for="full_name" class="form-label">Полное имя</label>
-                        <input type="text" class="form-control" id="full_name" name="full_name" required
-                               placeholder="Иван Петров">
-                    </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('register') }}" class="needs-validation" novalidate>
+                    {{ form.hidden_tag() }}
 
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" required
-                               placeholder="your@email.com">
-                        <div class="form-text">На этот email придет код подтверждения</div>
-                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="first_name" class="form-label fw-semibold">Имя</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-user text-primary"></i>
+                                </span>
+                                {{ form.first_name(class="form-control", placeholder="Иван", id="first_name") }}
+                            </div>
+                        </div>
 
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">Телефон</label>
-                        <input type="tel" class="form-control" id="phone" name="phone"
-                               placeholder="+7 (999) 123-45-67">
-                    </div>
+                        <div class="col-md-6">
+                            <label for="last_name" class="form-label fw-semibold">Фамилия</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-user text-primary"></i>
+                                </span>
+                                {{ form.last_name(class="form-control", placeholder="Иванов", id="last_name") }}
+                            </div>
+                        </div>
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Пароль</label>
-                        <input type="password" class="form-control" id="password" name="password" required
-                               placeholder="••••••••" minlength="8">
-                        <div class="form-text">Минимум 8 символов</div>
-                    </div>
+                        <div class="col-12">
+                            <label for="username" class="form-label fw-semibold">Имя пользователя</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-at text-primary"></i>
+                                </span>
+                                {{ form.username(class="form-control", placeholder="ivan123", id="username") }}
+                            </div>
+                            <div class="form-text">Только латинские буквы, цифры и символы . _ -</div>
+                        </div>
 
-                    <div class="mb-3">
-                        <label for="password2" class="form-label">Подтверждение пароля</label>
-                        <input type="password" class="form-control" id="password2" name="password2" required
-                               placeholder="••••••••">
-                    </div>
+                        <div class="col-12">
+                            <label for="email" class="form-label fw-semibold">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-envelope text-primary"></i>
+                                </span>
+                                {{ form.email(class="form-control", placeholder="example@mail.ru", id="email") }}
+                            </div>
+                        </div>
 
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="agree" name="agree" required>
-                        <label class="form-check-label" for="agree">
-                            Я согласен с <a href="#" class="text-decoration-none">условиями использования</a>
-                            и <a href="#" class="text-decoration-none">политикой конфиденциальности</a>
-                        </label>
-                    </div>
+                        <div class="col-md-6">
+                            <label for="password" class="form-label fw-semibold">Пароль</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-lock text-primary"></i>
+                                </span>
+                                {{ form.password(class="form-control", placeholder="••••••••", id="password", type="password") }}
+                            </div>
+                            <div class="password-strength mt-2">
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar" role="progressbar" style="width: 0%;" id="passwordStrength"></div>
+                                </div>
+                            </div>
+                        </div>
 
-                    <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
-                        <i class="fas fa-user-plus me-2"></i>Зарегистрироваться
-                    </button>
+                        <div class="col-md-6">
+                            <label for="confirm_password" class="form-label fw-semibold">Подтвердите пароль</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-lock text-primary"></i>
+                                </span>
+                                {{ form.confirm_password(class="form-control", placeholder="••••••••", id="confirm_password", type="password") }}
+                            </div>
+                        </div>
 
-                    <div class="text-center">
-                        <a href="{{ url_for('login') }}" class="text-decoration-none">
-                            Уже есть аккаунт? Войдите
-                        </a>
+                        <div class="col-12">
+                            <label for="phone" class="form-label fw-semibold">Телефон</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-phone text-primary"></i>
+                                </span>
+                                {{ form.phone(class="form-control", placeholder="+7 (999) 999-99-99", id="phone") }}
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check">
+                                {{ form.agree_terms(class="form-check-input", id="agree_terms") }}
+                                <label class="form-check-label" for="agree_terms">
+                                    Я соглашаюсь с <a href="#" class="text-primary">условиями использования</a> и
+                                    <a href="#" class="text-primary">политикой конфиденциальности</a>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-primary w-100 rounded-pill py-3 fw-bold">
+                                <i class="fas fa-user-check me-2"></i>Зарегистрироваться
+                            </button>
+                        </div>
+
+                        <div class="col-12 text-center">
+                            <p class="text-muted">
+                                Уже есть аккаунт?
+                                <a href="{{ url_for('login') }}" class="text-primary fw-bold text-decoration-none">
+                                    Войти
+                                </a>
+                            </p>
+                        </div>
                     </div>
                 </form>
-
-                <!-- Индикатор надежности пароля -->
-                <div class="mt-4 password-strength d-none">
-                    <div class="progress" style="height: 5px;">
-                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
-                    </div>
-                    <small class="text-muted mt-1">Надежность пароля: <span class="strength-text">слабый</span></small>
-                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-$(document).ready(function() {
-    // Проверка совпадения паролей
-    $('#password, #password2').on('input', function() {
-        if ($('#password').val() !== $('#password2').val()) {
-            $('#password2').addClass('is-invalid');
-        } else {
-            $('#password2').removeClass('is-invalid');
-        }
-    });
+// Валидация пароля в реальном времени
+document.getElementById('password').addEventListener('input', function() {
+    const password = this.value;
+    const strengthBar = document.getElementById('passwordStrength');
+    let strength = 0;
 
-    // Индикатор надежности пароля
-    $('#password').on('input', function() {
-        const password = $(this).val();
-        const strength = Kildear.checkPasswordStrength(password);
+    if(password.length >= 8) strength += 25;
+    if(password.match(/[a-z]+/)) strength += 25;
+    if(password.match(/[A-Z]+/)) strength += 25;
+    if(password.match(/[0-9]+/)) strength += 25;
 
-        $('.password-strength').removeClass('d-none');
+    strengthBar.style.width = strength + '%';
 
-        const progressBar = $('.password-strength .progress-bar');
-        const strengthText = $('.strength-text');
-
-        if (strength.score === 0) {
-            progressBar.css('width', '0%').removeClass('bg-success bg-warning').addClass('bg-danger');
-            strengthText.text('очень слабый').css('color', '#dc3545');
-        } else if (strength.score === 1) {
-            progressBar.css('width', '25%').removeClass('bg-success bg-warning').addClass('bg-danger');
-            strengthText.text('слабый').css('color', '#dc3545');
-        } else if (strength.score === 2) {
-            progressBar.css('width', '50%').removeClass('bg-success bg-danger').addClass('bg-warning');
-            strengthText.text('средний').css('color', '#ffc107');
-        } else if (strength.score === 3) {
-            progressBar.css('width', '75%').removeClass('bg-danger bg-warning').addClass('bg-success');
-            strengthText.text('хороший').css('color', '#28a745');
-        } else {
-            progressBar.css('width', '100%').removeClass('bg-danger bg-warning').addClass('bg-success');
-            strengthText.text('отличный').css('color', '#28a745');
-        }
-    });
-
-    // Маска для телефона
-    $('#phone').on('input', function() {
-        let phone = $(this).val().replace(/\D/g, '');
-        if (phone.length > 11) phone = phone.slice(0, 11);
-
-        if (phone.length > 0) {
-            if (phone[0] === '7' || phone[0] === '8') {
-                phone = phone.slice(1);
-            }
-
-            let formatted = '+7';
-            if (phone.length > 0) formatted += ' (' + phone.slice(0, 3);
-            if (phone.length > 3) formatted += ') ' + phone.slice(3, 6);
-            if (phone.length > 6) formatted += '-' + phone.slice(6, 8);
-            if (phone.length > 8) formatted += '-' + phone.slice(8, 10);
-
-            $(this).val(formatted);
-        }
-    });
+    if(strength <= 25) {
+        strengthBar.className = 'progress-bar bg-danger';
+    } else if(strength <= 50) {
+        strengthBar.className = 'progress-bar bg-warning';
+    } else if(strength <= 75) {
+        strengthBar.className = 'progress-bar bg-info';
+    } else {
+        strengthBar.className = 'progress-bar bg-success';
+    }
 });
 
-// Добавляем метод проверки пароля
-Kildear.checkPasswordStrength = function(password) {
-    let score = 0;
-
-    if (password.length >= 8) score++;
-    if (password.length >= 12) score++;
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^a-zA-Z0-9]/.test(password)) score++;
-
-    return { score: Math.min(score, 4) };
-};
+// Маска для телефона
+document.getElementById('phone').addEventListener('input', function(e) {
+    let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+    e.target.value = !x[2] ? x[1] : '+' + x[1] + ' (' + x[2] + ') ' + x[3] + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+});
 </script>
-{% endblock %}
+{% endblock %}м

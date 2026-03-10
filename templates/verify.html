@@ -1,98 +1,89 @@
 {% extends "base.html" %}
 
-{% block title %}Kildear - Подтверждение email{% endblock %}
+{% block title %}Подтверждение email{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-5 text-center">
-                <div class="mb-4">
-                    <i class="fas fa-envelope-open-text fa-4x text-primary"></i>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="card-body text-center p-5">
+                {% if success %}
+                <div class="success-animation mb-4">
+                    <i class="fas fa-check-circle fa-5x text-success"></i>
                 </div>
 
-                <h2 class="h4 mb-3">Подтвердите ваш email</h2>
-
+                <h2 class="fw-bold mb-3">Email подтвержден!</h2>
                 <p class="text-muted mb-4">
-                    Мы отправили код подтверждения на <strong>{{ email }}</strong>.<br>
-                    Введите его ниже:
+                    Спасибо! Ваш email успешно подтвержден. Теперь вам доступны все функции маркетплейса.
                 </p>
 
-                <form method="POST" action="{{ url_for('verify') }}" id="verifyForm">
-                    <div class="mb-4">
-                        <input type="text" class="form-control form-control-lg text-center"
-                               id="code" name="code" required maxlength="6"
-                               placeholder="000000" pattern="[0-9]{6}">
-                        <div class="form-text">Код действителен 10 минут</div>
-                    </div>
+                <a href="{{ url_for('profile') }}" class="btn btn-primary rounded-pill px-5 py-3">
+                    <i class="fas fa-user me-2"></i>Перейти в профиль
+                </a>
 
-                    <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
-                        <i class="fas fa-check me-2"></i>Подтвердить
-                    </button>
-                </form>
-
-                <div class="mt-4">
-                    <p class="small text-muted mb-2">Не получили код?</p>
-                    <button class="btn btn-link text-decoration-none" id="resendCode">
-                        Отправить снова
-                    </button>
+                {% elif expired %}
+                <div class="error-animation mb-4">
+                    <i class="fas fa-clock fa-5x text-warning"></i>
                 </div>
 
-                <!-- Таймер -->
-                <div class="mt-3 timer text-muted small">
-                    <i class="fas fa-clock me-1"></i>
-                    <span id="timer">10:00</span>
+                <h2 class="fw-bold mb-3">Ссылка устарела</h2>
+                <p class="text-muted mb-4">
+                    Срок действия ссылки для подтверждения истек. Запросите новое письмо для подтверждения.
+                </p>
+
+                <button class="btn btn-warning rounded-pill px-5 py-3" onclick="resendVerification()">
+                    <i class="fas fa-envelope me-2"></i>Отправить снова
+                </button>
+
+                {% else %}
+                <div class="error-animation mb-4">
+                    <i class="fas fa-exclamation-circle fa-5x text-danger"></i>
+                </div>
+
+                <h2 class="fw-bold mb-3">Ошибка подтверждения</h2>
+                <p class="text-muted mb-4">
+                    Не удалось подтвердить email. Возможно, ссылка некорректна или уже была использована.
+                </p>
+
+                <a href="{{ url_for('index') }}" class="btn btn-primary rounded-pill px-5 py-3">
+                    <i class="fas fa-home me-2"></i>На главную
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if not success and not expired %}
+        <div class="card border-0 shadow-sm rounded-4 mt-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">Нужна помощь?</h5>
+                <p class="mb-3">Свяжитесь со службой поддержки:</p>
+                <div class="d-flex gap-3">
+                    <a href="#" class="btn btn-outline-primary rounded-pill flex-grow-1">
+                        <i class="fab fa-telegram me-2"></i>Telegram
+                    </a>
+                    <a href="#" class="btn btn-outline-primary rounded-pill flex-grow-1">
+                        <i class="fas fa-envelope me-2"></i>Email
+                    </a>
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 
 <script>
-$(document).ready(function() {
-    // Таймер
-    let timeLeft = 600; // 10 минут в секундах
-
-    function updateTimer() {
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
-        $('#timer').text(`${minutes}:${seconds.toString().padStart(2, '0')}`);
-
-        if (timeLeft > 0) {
-            timeLeft--;
+function resendVerification() {
+    fetch('/api/resend-verification', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            alert('Письмо с подтверждением отправлено! Проверьте вашу почту.');
         } else {
-            $('#timer').text('00:00');
-            $('#resendCode').prop('disabled', false);
-        }
-    }
-
-    setInterval(updateTimer, 1000);
-
-    // Повторная отправка кода
-    $('#resendCode').on('click', function() {
-        $(this).prop('disabled', true).text('Отправка...');
-
-        $.ajax({
-            url: '{{ url_for("resend_code") }}',
-            method: 'GET',
-            success: function() {
-                Kildear.showNotification('Новый код отправлен на вашу почту', 'success');
-                timeLeft = 600; // Сброс таймера
-                $('#resendCode').prop('disabled', false).text('Отправить снова');
-            },
-            error: function() {
-                Kildear.showNotification('Ошибка при отправке кода', 'danger');
-                $('#resendCode').prop('disabled', false).text('Отправить снова');
-            }
-        });
-    });
-
-    // Автоматическая отправка формы при вводе 6 цифр
-    $('#code').on('input', function() {
-        if ($(this).val().length === 6) {
-            $('#verifyForm').submit();
+            alert('Ошибка при отправке письма. Попробуйте позже.');
         }
     });
-});
+}
 </script>
 {% endblock %}
